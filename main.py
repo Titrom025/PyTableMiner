@@ -86,50 +86,51 @@ def analyze_cells(table, markup):
 
             markup.iloc[row_idx, col_idx] = cell_type
 
+
+def detect_year(markup, row, row_idx, column_count):
+    numbers_in_row = 0
+    previous_number = None
+    for col_idx, cell in enumerate(row):
+        if markup.iloc[row_idx, col_idx] == 'Number':
+            numbers_in_row += 1
+            if previous_number is None:
+                previous_number = cell
+            elif cell == previous_number + 1:
+                previous_number = cell
+            else:
+                return False
+        elif markup.iloc[row_idx, col_idx] == 'Text':
+            pass
+
+    if numbers_in_row > column_count * 0.9:
+        return False
+
+    for col_idx, cell in enumerate(row):
+        if markup.iloc[row_idx, col_idx] == 'Number':
+            markup.iloc[row_idx, col_idx] = 'Year'
+    return True
+
+
 def analyze_rows(table, markup):
     row_count, column_count = table.shape
-
     for row_idx, row in table.iterrows():
-        if row_idx == 4:
-            print(row_idx, row)
-        is_date = True
-
-        numbers_in_row = 0
-        previous_number = None
-        for col_idx, cell in enumerate(row):
-            if markup.iloc[row_idx, col_idx] == 'Number':
-                numbers_in_row += 1
-                if previous_number is None:
-                    previous_number = cell
-                elif  cell == previous_number + 1:
-                    previous_number = cell
-                else:
-                    is_date = False
-        if numbers_in_row < column_count * 0.9:
-            is_date = False
-
-        if is_date:
-            for col_idx, cell in enumerate(row):
-                if markup.iloc[row_idx, col_idx] == 'Number':
-                    markup.iloc[row_idx, col_idx] = 'Year'
+        if detect_year(markup, row, row_idx, column_count):
+            continue
 
 
-        # for row_idx, val in enumerate(table[column]):
-        #     if val is None:
-        #         continue
-        #     try:
-        #         float(val)
-        #         cell_type = 'Number'
-        #     except ValueError:
-        #         stemmed_val = stemmer.stem(val)
-        #         stemmed_words.add(stemmed_val)
-        #         cell_type = 'Text'
-        #
-        #     markup.iloc[row_idx, col_idx] = cell_type
+def init_ontology():
+    for file in os.listdir(ONTOLOGY_PATH):
+        with open(os.path.join(ONTOLOGY_PATH, file)) as ontology_file:
+            for term in ontology_file:
+                print(term)
+
 
 def excel_main():
     global stemmed_words
     global stemmer
+
+    init_ontology()
+
     table = pd.read_excel('1.xlsx')
     columns = list(table.columns)
     row_count, column_count = table.shape
