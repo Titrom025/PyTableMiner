@@ -7,10 +7,13 @@ import requests
 
 from nltk.stem import snowball
 
-
 SOLR_PATH = '/Users/titrom/Desktop/Tables/QTM-master/solr'
 CORES = ['trait_descriptors', 'trait_values', 'trait_properties', 'sgn_tomato_genes', 'sgn_tomato_markers']
 
+TERMS_PATH = "terms.csv"
+ONTOLOGY_PATH = 'Ontologies'
+ontology = {}
+ENTITIES = {}
 
 def control_solr(command):
     solr_command = f'{SOLR_PATH}/run.sh {command} 8983 {SOLR_PATH}/core/data'
@@ -148,9 +151,41 @@ def excel_main():
     table.columns = columns
 
     markup.to_excel('1_processed.xlsx', columns=columns)
+    print(stemmed_words)
 
 
+from owlready2 import *
+
+
+def rdf_main():
+    onto_path.append("/Users/titrom/Desktop/Диплом/Tables/Ontology/population_kz-ontologies-owl-REVISION-HEAD/")
+    onto = get_ontology("Population_KZ.owl")
+    onto.load()
+    # print(dir(onto))
+    # print(list(onto.classes()))
+    # print(list(onto.individuals()))
+    # print(dir(onto.Almaty_Region), onto.Almaty_Region.get_properties())
+    for individual in onto.individuals():
+        print(dir(individual))
+        print(individual.is_instance_of, individual.name, individual.name.lower() in ENTITIES, individual)
+
+
+def parse_entities():
+    global ENTITIES
+    with open(TERMS_PATH) as csvfile_reader:
+        csv_reader = csv.reader(csvfile_reader, delimiter=';')
+        for line_idx, csv_line in enumerate(csv_reader):
+            rus_term, eng_term, rus_short, eng_short = csv_line
+            # print(rus_term, eng_term, rus_short, eng_short)
+            ENTITIES[eng_term.lower()] = {
+                "rus_term": rus_term,
+                "eng_term": eng_term,
+                "rus_short": rus_short,
+                "eng_short": eng_short
+            }
 
 
 if __name__ == '__main__':
-    excel_main()
+    # excel_main()
+    parse_entities()
+    rdf_main()
