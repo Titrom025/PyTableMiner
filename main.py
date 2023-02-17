@@ -6,6 +6,8 @@ import pandas as pd
 import requests
 
 from nltk.stem import snowball
+from owlready2 import *
+
 
 SOLR_PATH = '/Users/titrom/Desktop/Tables/QTM-master/solr'
 CORES = ['trait_descriptors', 'trait_values', 'trait_properties', 'sgn_tomato_genes', 'sgn_tomato_markers']
@@ -13,7 +15,13 @@ CORES = ['trait_descriptors', 'trait_values', 'trait_properties', 'sgn_tomato_ge
 TERMS_PATH = "terms.csv"
 ONTOLOGY_PATH = 'Ontologies'
 ontology = {}
-ENTITIES = {}
+terms = {}
+onto = None
+value2individual = {}
+
+INPUT_EXCEL_FILE = '1.xlsx'
+OUTPUT_EXCEL_FILE = '1_processed.xlsx'
+
 
 def control_solr(command):
     solr_command = f'{SOLR_PATH}/run.sh {command} 8983 {SOLR_PATH}/core/data'
@@ -76,16 +84,21 @@ def solr_main():
 
 def analyze_cells(table, markup):
     for col_idx, column in enumerate(table):
-        for row_idx, val in enumerate(table[column]):
-            if val is None:
+        for row_idx, cell_val in enumerate(table[column]):
+            if cell_val is None:
                 continue
             try:
-                float(val)
+                float(cell_val)
                 cell_type = 'Number'
             except ValueError:
-                stemmed_val = stemmer.stem(val)
-                stemmed_words.add(stemmed_val)
-                cell_type = 'Text'
+                cell_val = cell_val.lower()
+                if cell_val in value2individual:
+                    cell_type = value2individual[cell_val]['is_instance_of']
+                    print(f'Value "{cell_val}" classifies as "{cell_type}"')
+                else:
+                    stemmed_val = stemmer.stem(cell_val)
+                    stemmed_words.add(stemmed_val)
+                    cell_type = 'Text'
 
             markup.iloc[row_idx, col_idx] = cell_type
 
@@ -97,15 +110,15 @@ def detect_year(markup, row, row_idx, column_count):
         if markup.iloc[row_idx, col_idx] == 'Number':
             numbers_in_row += 1
             if previous_number is None:
-                previous_number = cell
+                previous_number = round(cell)
             elif cell == previous_number + 1:
-                previous_number = cell
+                previous_number = round(cell)
             else:
                 return False
         elif markup.iloc[row_idx, col_idx] == 'Text':
             pass
 
-    if numbers_in_row > column_count * 0.9:
+    if numbers_in_row < column_count * 0.9:
         return False
 
     for col_idx, cell in enumerate(row):
@@ -121,20 +134,20 @@ def analyze_rows(table, markup):
             continue
 
 
-def init_ontology():
-    for file in os.listdir(ONTOLOGY_PATH):
-        with open(os.path.join(ONTOLOGY_PATH, file)) as ontology_file:
-            for term in ontology_file:
-                print(term)
+# def init_ontology():
+#     for file in os.listdir(ONTOLOGY_PATH):
+#         with open(os.path.join(ONTOLOGY_PATH, file)) as ontology_file:
+#             for term in ontology_file:
+#                 print(term)
 
 
-def excel_main():
+def analyze_excel():
     global stemmed_words
     global stemmer
 
-    init_ontology()
+    # init_ontology()
 
-    table = pd.read_excel('1.xlsx')
+    table = pd.read_excel(INPUT_EXCEL_FILE)
     columns = list(table.columns)
     row_count, column_count = table.shape
 
@@ -143,41 +156,50 @@ def excel_main():
     stemmer = snowball.SnowballStemmer('russian')
     stemmed_words = set()
 
-    markup = pd.DataFrame('-', index=np.arange(row_count), columns=columns)
+    markup = pd.DataFrame('', index=np.arange(row_count), columns=columns)
 
     analyze_cells(table, markup)
     analyze_rows(table, markup)
-    # columns[0] = 'region'
     table.columns = columns
 
-    markup.to_excel('1_processed.xlsx', columns=columns)
-    print(stemmed_words)
+    markup.to_excel(OUTPUT_EXCEL_FILE, columns=columns)
+    # print(stemmed_words)
+    print(f'Saved marked up table into {INPUT_EXCEL_FILE}')
 
 
-from owlready2 import *
-
-
-def rdf_main():
-    onto_path.append("/Users/titrom/Desktop/Диплом/Tables/Ontology/population_kz-ontologies-owl-REVISION-HEAD/")
-    onto = get_ontology("Population_KZ.owl")
+def load_ontology():
+    global onto
+    # onto_path.append("/Users/titrom/Desktop/Диплом/Tables/Ontology/population_kz-ontologies-owl-REVISION-HEAD/")
+    onto = get_ontology("Population_KZ_1702.owl")
     onto.load()
-    # print(dir(onto))
-    # print(list(onto.classes()))
-    # print(list(onto.individuals()))
-    # print(dir(onto.Almaty_Region), onto.Almaty_Region.get_properties())
+
     for individual in onto.individuals():
-        print(dir(individual))
-        print(individual.is_instance_of, individual.name, individual.name.lower() in ENTITIES, individual)
+        print(individual.is_instance_of, individual.name)
+        for prop in individual.get_properties():
+            if prop.namespace.name == 'population_kz':
+                prop_value = individual.__getattr__(prop.name)[0]
+                print(f'   - {prop} {prop_value}')
+                if prop.name == 'Label_ru':
+                    is_instance_of_str = [str(x.name) for x in individual.is_instance_of]
+                    value2individual[prop_value.lower()] = {
+                        "individual": individual,
+                        "is_instance_of": "|".join(is_instance_of_str)
+                    }
+                    print(f'Term "{prop_value.lower()}" in term list exists: '
+                          f'{prop_value.lower() in terms}')
 
 
-def parse_entities():
-    global ENTITIES
+    # print(dir(onto))
+    onto.save("Population_KZ_new.owl")
+
+
+def load_terms():
+    global terms
     with open(TERMS_PATH) as csvfile_reader:
         csv_reader = csv.reader(csvfile_reader, delimiter=';')
         for line_idx, csv_line in enumerate(csv_reader):
             rus_term, eng_term, rus_short, eng_short = csv_line
-            # print(rus_term, eng_term, rus_short, eng_short)
-            ENTITIES[eng_term.lower()] = {
+            terms[rus_term.lower()] = {
                 "rus_term": rus_term,
                 "eng_term": eng_term,
                 "rus_short": rus_short,
@@ -186,6 +208,6 @@ def parse_entities():
 
 
 if __name__ == '__main__':
-    # excel_main()
-    parse_entities()
-    rdf_main()
+    load_terms()
+    load_ontology()
+    analyze_excel()
