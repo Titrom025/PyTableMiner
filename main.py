@@ -13,15 +13,15 @@ SOLR_PATH = '/Users/titrom/Desktop/Tables/QTM-master/solr'
 CORES = ['trait_descriptors', 'trait_values', 'trait_properties', 'sgn_tomato_genes', 'sgn_tomato_markers']
 
 TERMS_PATH = "terms.csv"
-ONTOLOGY_PATH = 'Ontologies'
+ONTOLOGY_PATH = "Population_KZ.owl"
 ontology = {}
 terms = {}
 onto = None
 value2individual = {}
+row2individual = {}
+col2year = {}
 
-INPUT_EXCEL_FILE = '1.xlsx'
-OUTPUT_EXCEL_FILE = '1_processed.xlsx'
-
+TARGET_PROPERTY = 'Population'
 
 def control_solr(command):
     solr_command = f'{SOLR_PATH}/run.sh {command} 8983 {SOLR_PATH}/core/data'
@@ -95,6 +95,8 @@ def analyze_cells(table, markup):
                 if cell_val in value2individual:
                     cell_type = value2individual[cell_val]['is_instance_of']
                     print(f'Value "{cell_val}" classifies as "{cell_type}"')
+                    row2individual[row_idx] = value2individual[cell_val]['individual']
+                    print(row2individual[row_idx])
                 else:
                     stemmed_val = stemmer.stem(cell_val)
                     stemmed_words.add(stemmed_val)
@@ -124,6 +126,7 @@ def detect_year(markup, row, row_idx, column_count):
     for col_idx, cell in enumerate(row):
         if markup.iloc[row_idx, col_idx] == 'Number':
             markup.iloc[row_idx, col_idx] = 'Year'
+            col2year[col_idx] = round(cell)
     return True
 
 
@@ -140,14 +143,41 @@ def analyze_rows(table, markup):
 #             for term in ontology_file:
 #                 print(term)
 
+def write_table_to_ontology(table, markup):
+    for col_idx, column in enumerate(table):
+        if col_idx not in col2year:
+            continue
+        for row_idx, cell_val in enumerate(table[column]):
+            if row_idx not in row2individual:
+                continue
+            if markup.iloc[row_idx, col_idx] == 'Number':
+                value = round(table.iloc[row_idx, col_idx])
+                individual = row2individual[row_idx]
+                year = col2year[col_idx]
+                print(f'Property {TARGET_PROPERTY}, '
+                      f'Val {value}, '
+                      f'Year: {year}, '
+                      f'Individual: {individual}')
+                if individual.__getattr__(TARGET_PROPERTY) is None:
+                    try:
+                        individual.__setattr__(TARGET_PROPERTY, [f'{year}_{value}'])
+                    except Exception:
+                        individual.__setattr__(TARGET_PROPERTY, f'{year}_{value}')
+                else:
+                    try:
+                        individual.__getattr__(TARGET_PROPERTY).append(f'{year}_{value}')
+                    except:
+                        str_prop = individual.__getattr__(TARGET_PROPERTY)
+                        individual.__setattr__(TARGET_PROPERTY, str_prop + f'{year}_{value}|')
 
-def analyze_excel():
+
+def analyze_excel(table, excel_out):
     global stemmed_words
     global stemmer
 
     # init_ontology()
 
-    table = pd.read_excel(INPUT_EXCEL_FILE)
+    # table = pd.read_excel(path)
     columns = list(table.columns)
     row_count, column_count = table.shape
 
@@ -162,35 +192,46 @@ def analyze_excel():
     analyze_rows(table, markup)
     table.columns = columns
 
-    markup.to_excel(OUTPUT_EXCEL_FILE, columns=columns)
+    write_table_to_ontology(table, markup)
+
+    markup.to_excel(excel_out, columns=columns)
     # print(stemmed_words)
-    print(f'Saved marked up table into {INPUT_EXCEL_FILE}')
+    print(f'Saved marked up table into {excel_out}')
 
 
 def load_ontology():
     global onto
-    # onto_path.append("/Users/titrom/Desktop/Диплом/Tables/Ontology/population_kz-ontologies-owl-REVISION-HEAD/")
-    onto = get_ontology("Population_KZ_1702.owl")
+    # onto_path.append("/Users/titrom/Desktop/Диплом/Tables/")
+    onto = get_ontology(ONTOLOGY_PATH)
     onto.load()
+
+    # with onto:
+    #     class Population_KZ(DataProperty):
+    #         range = [int]
 
     for individual in onto.individuals():
         print(individual.is_instance_of, individual.name)
-        for prop in individual.get_properties():
-            if prop.namespace.name == 'population_kz':
-                prop_value = individual.__getattr__(prop.name)[0]
-                print(f'   - {prop} {prop_value}')
-                if prop.name == 'Label_ru':
-                    is_instance_of_str = [str(x.name) for x in individual.is_instance_of]
-                    value2individual[prop_value.lower()] = {
-                        "individual": individual,
-                        "is_instance_of": "|".join(is_instance_of_str)
-                    }
-                    print(f'Term "{prop_value.lower()}" in term list exists: '
-                          f'{prop_value.lower() in terms}')
+        is_instance_of_str = [str(x.name) for x in individual.is_instance_of]
+        value2individual[individual.name.lower()] = {
+            "individual": individual,
+            "is_instance_of": "|".join(is_instance_of_str)
+        }
 
+        # individual.__setattr__(TARGET_PROPERTY, [123])
 
-    # print(dir(onto))
-    onto.save("Population_KZ_new.owl")
+        # for prop in individual.get_properties():
+        #     if prop.namespace.name == 'population_kz':
+        #         prop_value = individual.__getattr__(prop.name)[0]
+        #         print(f'   - {prop} {prop_value}')
+        #         if prop.name == 'Label_ru':
+        #             is_instance_of_str = [str(x.name) for x in individual.is_instance_of]
+        #             value2individual[prop_value.lower()] = {
+        #                 "individual": individual,
+        #                 "is_instance_of": "|".join(is_instance_of_str)
+        #             }
+        #             print(f'Term "{prop_value.lower()}" in term list exists: '
+        #                   f'{prop_value.lower() in terms}')
+
 
 
 def load_terms():
@@ -199,7 +240,7 @@ def load_terms():
         csv_reader = csv.reader(csvfile_reader, delimiter=';')
         for line_idx, csv_line in enumerate(csv_reader):
             rus_term, eng_term, rus_short, eng_short = csv_line
-            terms[rus_term.lower()] = {
+            terms[eng_term.lower()] = {
                 "rus_term": rus_term,
                 "eng_term": eng_term,
                 "rus_short": rus_short,
@@ -210,4 +251,37 @@ def load_terms():
 if __name__ == '__main__':
     load_terms()
     load_ontology()
-    analyze_excel()
+    EXCEL_FILE = 'Population_KZ.xlsx'
+    BASE_PATH = '/Users/titrom/Desktop/Диплом/Tables/'
+    INPUT_EXCEL_FILE = BASE_PATH + EXCEL_FILE
+    OUTPUT_EXCEL_FILE = BASE_PATH + 'processed/' + EXCEL_FILE
+
+    if not os.path.exists(BASE_PATH + 'processed/'):
+        os.mkdir(BASE_PATH + 'processed/')
+
+    excel_file = pd.ExcelFile(INPUT_EXCEL_FILE)
+
+    for sheet_name in excel_file.sheet_names:
+        TARGET_PROPERTY = sheet_name.replace('_KZ', '').replace('population', 'Population')
+        if 'female' in TARGET_PROPERTY or 'Female' in TARGET_PROPERTY:
+            TARGET_PROPERTY = TARGET_PROPERTY.replace('female', 'Female')
+        elif 'male' in TARGET_PROPERTY:
+            TARGET_PROPERTY = TARGET_PROPERTY.replace('male', 'Male')
+        table = excel_file.parse(sheet_name)
+
+        if TARGET_PROPERTY in ['Urban_Male_Population',
+                               'Rural_Male_Population',
+                               'Urban_Female_Population',
+                               'Rural_Female_Population']:
+            continue
+
+        # try:
+        analyze_excel(table, OUTPUT_EXCEL_FILE.replace('.xlsx', '_') + sheet_name + '.xlsx')
+        # except Exception as e:
+            # print(e)
+
+        # break
+    #
+    # print(value2individual)
+    #
+    onto.save(ONTOLOGY_PATH.replace('.owl', '_new.owl'))
