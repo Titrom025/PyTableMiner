@@ -12,96 +12,59 @@ from owlready2 import *
 SOLR_PATH = '/Users/titrom/Desktop/Tables/QTM-master/solr'
 CORES = ['trait_descriptors', 'trait_values', 'trait_properties', 'sgn_tomato_genes', 'sgn_tomato_markers']
 
-TERMS_PATH = "terms.csv"
-ONTOLOGY_PATH = "Population_KZ.owl"
-ontology = {}
-terms = {}
+
+# ONTOLOGY_PATH = "Population_KZ.owl"
+ONTOLOGY_PATH = "ontologies/Water_Ontology_KZ_modified.owl"
 onto = None
+
+# TERMS_PATH = "terms.csv"
+terms = {}
+
 value2individual = {}
 row2individual = {}
-col2year = {}
+col2tag = {}
 
-TARGET_PROPERTY = 'Population'
-
-def control_solr(command):
-    solr_command = f'{SOLR_PATH}/run.sh {command} 8983 {SOLR_PATH}/core/data'
-    print(solr_command)
-    os.system(solr_command)
-    time.sleep(3)
+TARGET_TAG = None
 
 
-def make_api_call(post_data, core):
-    url = f'http://localhost:8983/solr/{core}/tag?fl=uuid,code,prefterm,' \
-          f'term&overlaps=LONGEST_DOMINANT_RIGHT&matchText=true&tagsLimit=5000&wt=json'
 
-    x = requests.post(url, data=post_data)
-    if x.status_code == 200:
-        return x.json()
-    return {''}
-
-
-def get_term(text):
-    terms_str = ''
-    for core in CORES:
-        json = make_api_call(text, core)
-        terms = []
-
-        if 'response' not in json:
-            continue
-        if 'docs' not in json['response']:
-            continue
-
-        for doc in json['response']['docs']:
-            terms.append(doc['term'])
-
-        for term in terms:
-            if term in terms_str:
-                continue
-            if len(terms_str):
-                terms_str += ' | '
-            terms_str += f'{term}'
-
-    return terms_str
-
-
-def solr_main():
-    control_solr('start')
-
-    with open('table.csv') as csvfile_reader:
-        with open('table_processed.csv', 'w') as csvfile_writer:
-            csv_reader = csv.reader(csvfile_reader, delimiter=';')
-            csv_writer = csv.writer(csvfile_writer, delimiter=';')
-            for line_idx, csv_line in enumerate(csv_reader):
-                print(f'Line {line_idx}')
-                csv_output_row = []
-                for cell in csv_line:
-                    term = ''
-                    if cell != '':
-                        term = get_term(cell)
-                    csv_output_row.append(term)
-                csv_writer.writerow(csv_output_row)
+tag2property = {
+    'Square (sq km)': 'Square',
+    'Water_resources_KZ (cubic meter)': 'Water_resources_KZ',
+    'Regions_KZ': 'Regions_KZ',
+    'Basins_Population': 'Basins_Population',
+    'Urban_Basins_Population': 'Urban_Basins_Population',
+    'Rural_Basins_Population': 'Rural_Basins_Population',
+    'Rivers_of_Basins': 'Rivers_of_Basins',
+    'River_length_in_KZ (km)': 'River_length_in_KZ',
+}
 
 
 def analyze_cells(table, markup):
     for col_idx, column in enumerate(table):
         for row_idx, cell_val in enumerate(table[column]):
-            if cell_val is None:
+            if cell_val is None or cell_val == "":
                 continue
             try:
-                float(cell_val)
+                float_val = float(cell_val)
+                table.iloc[row_idx, col_idx] = float_val
                 cell_type = 'Number'
             except ValueError:
-                cell_val = cell_val.lower()
-                if cell_val in value2individual:
-                    cell_type = value2individual[cell_val]['is_instance_of']
-                    print(f'Value "{cell_val}" classifies as "{cell_type}"')
-                    row2individual[row_idx] = value2individual[cell_val]['individual']
-                    print(row2individual[row_idx])
+                cell_val_lower = cell_val.lower()
+                if cell_val_lower in value2individual:
+                    cell_type = value2individual[cell_val_lower]['is_instance_of']
+                    print(f'Value "{cell_val_lower}" classifies as "{cell_type}"')
+                    row2individual[row_idx] = value2individual[cell_val_lower]['individual']
+                    # markup.iloc[row_idx, col_idx] = cell_type
                 else:
                     stemmed_val = stemmer.stem(cell_val)
                     stemmed_words.add(stemmed_val)
                     cell_type = 'Text'
-
+                    print(f'Text value: "{cell_val}"')
+                    if cell_val in tag2property:
+                        cell_type = tag2property[cell_val]
+                        col2tag[col_idx] = cell_type
+                        print(f'Cell value "{cell_val}" classified as {cell_type}')
             markup.iloc[row_idx, col_idx] = cell_type
 
 
@@ -118,6 +81,7 @@ def detect_year(markup, row, row_idx, column_count):
             else:
                 return False
         elif markup.iloc[row_idx, col_idx] == 'Text':
+            # print(f'Text value: "{cell}"')
             pass
 
     if numbers_in_row < column_count * 0.9:
@@ -126,7 +90,7 @@ def detect_year(markup, row, row_idx, column_count):
     for col_idx, cell in enumerate(row):
         if markup.iloc[row_idx, col_idx] == 'Number':
             markup.iloc[row_idx, col_idx] = 'Year'
-            col2year[col_idx] = round(cell)
+            col2tag[col_idx] = round(cell)
     return True
 
 
@@ -145,30 +109,54 @@ def analyze_rows(table, markup):
 
 def write_table_to_ontology(table, markup):
     for col_idx, column in enumerate(table):
-        if col_idx not in col2year:
+        if col_idx not in col2tag:
             continue
         for row_idx, cell_val in enumerate(table[column]):
             if row_idx not in row2individual:
                 continue
-            if markup.iloc[row_idx, col_idx] == 'Number':
+            try:
                 value = round(table.iloc[row_idx, col_idx])
-                individual = row2individual[row_idx]
-                year = col2year[col_idx]
-                print(f'Property {TARGET_PROPERTY}, '
+            except Exception:
+                value = table.iloc[row_idx, col_idx]
+
+            individual = row2individual[row_idx]
+
+            if TARGET_TAG:
+                year = col2tag[col_idx]
+                print(f'Property {TARGET_TAG}, '
                       f'Val {value}, '
                       f'Year: {year}, '
                       f'Individual: {individual}')
-                if individual.__getattr__(TARGET_PROPERTY) is None:
+                if individual.__getattr__(TARGET_TAG) is None:
                     try:
-                        individual.__setattr__(TARGET_PROPERTY, [f'{year}_{value}'])
+                        individual.__setattr__(TARGET_TAG, [f'{year}_{value}'])
                     except Exception:
-                        individual.__setattr__(TARGET_PROPERTY, f'{year}_{value}')
+                        individual.__setattr__(TARGET_TAG, f'{year}_{value}')
                 else:
                     try:
-                        individual.__getattr__(TARGET_PROPERTY).append(f'{year}_{value}')
+                        individual.__getattr__(TARGET_TAG).append(f'{year}_{value}')
                     except:
-                        str_prop = individual.__getattr__(TARGET_PROPERTY)
-                        individual.__setattr__(TARGET_PROPERTY, str_prop + f'{year}_{value}|')
+                        str_prop = individual.__getattr__(TARGET_TAG)
+                        individual.__setattr__(TARGET_TAG, str_prop + f'{year}_{value}|')
+            else:
+                tag = col2tag[col_idx]
+                print(f'Property {tag}, '
+                      f'Val {value}, '
+                      f'Individual: {individual}')
+
+                if tag == 'Regions_KZ':
+                    tag += '_prop'
+                if individual.__getattr__(tag) is None:
+                    try:
+                        individual.__setattr__(tag, [f'{value}'])
+                    except Exception:
+                        individual.__setattr__(tag, f'{value}')
+                else:
+                    try:
+                        individual.__getattr__(tag).append(f'{value}')
+                    except Exception:
+                        str_prop = individual.__getattr__(tag)
+                        individual.__setattr__(tag, str_prop + f'{value}|')
 
 
 def analyze_excel(table, excel_out):
@@ -195,23 +183,26 @@ def analyze_excel(table, excel_out):
     write_table_to_ontology(table, markup)
 
     markup.to_excel(excel_out, columns=columns)
-    # print(stemmed_words)
     print(f'Saved marked up table into {excel_out}')
 
 
 def load_ontology():
     global onto
-    # onto_path.append("/Users/titrom/Desktop/Диплом/Tables/")
     onto = get_ontology(ONTOLOGY_PATH)
     onto.load()
 
-    # with onto:
-    #     class Population_KZ(DataProperty):
-    #         range = [int]
-
     for individual in onto.individuals():
+        is_instance_of_str = []
+        for x in individual.is_instance_of:
+            try:
+                is_instance_of_str.append(str(x.name))
+            except Exception:
+                pass
+
+        if 'Water_Basins_KZ' not in is_instance_of_str:
+            continue
+
         print(individual.is_instance_of, individual.name)
-        is_instance_of_str = [str(x.name) for x in individual.is_instance_of]
         value2individual[individual.name.lower()] = {
             "individual": individual,
             "is_instance_of": "|".join(is_instance_of_str)
@@ -233,7 +224,9 @@ def load_ontology():
         #                   f'{prop_value.lower() in terms}')
 
 
-
+    # print(dir(onto))
+    # for cls in onto.classes():
+    #     print(cls, cls.__module__, dir(cls))
 def load_terms():
     global terms
     with open(TERMS_PATH) as csvfile_reader:
@@ -248,40 +241,59 @@ def load_terms():
             }
 
 
-if __name__ == '__main__':
-    load_terms()
-    load_ontology()
-    EXCEL_FILE = 'Population_KZ.xlsx'
-    BASE_PATH = '/Users/titrom/Desktop/Диплом/Tables/'
-    INPUT_EXCEL_FILE = BASE_PATH + EXCEL_FILE
-    OUTPUT_EXCEL_FILE = BASE_PATH + 'processed/' + EXCEL_FILE
+def main():
+    global value2individual
+    global row2individual
+    global col2tag
+    global TARGET_TAG
 
-    if not os.path.exists(BASE_PATH + 'processed/'):
-        os.mkdir(BASE_PATH + 'processed/')
+    GET_TAG_FROM_SHEET_NAME = False
+    # load_terms()
+    load_ontology()
+    EXCEL_FILE = 'Water_Basins_KZ.xlsx'
+    BASE_PATH = '/Users/titrom/Desktop/Диплом/Tables/PyTableMiner'
+    TABLES_PATH = os.path.join(BASE_PATH, 'tables')
+    PROCESSED_PATH = os.path.join(BASE_PATH, 'processed')
+    INPUT_EXCEL_FILE = os.path.join(TABLES_PATH, EXCEL_FILE)
+    OUTPUT_EXCEL_FILE = os.path.join(PROCESSED_PATH, EXCEL_FILE)
+
+    if not os.path.exists(PROCESSED_PATH):
+        os.mkdir(PROCESSED_PATH)
 
     excel_file = pd.ExcelFile(INPUT_EXCEL_FILE)
 
     for sheet_name in excel_file.sheet_names:
-        TARGET_PROPERTY = sheet_name.replace('_KZ', '').replace('population', 'Population')
-        if 'female' in TARGET_PROPERTY or 'Female' in TARGET_PROPERTY:
-            TARGET_PROPERTY = TARGET_PROPERTY.replace('female', 'Female')
-        elif 'male' in TARGET_PROPERTY:
-            TARGET_PROPERTY = TARGET_PROPERTY.replace('male', 'Male')
+        print(f'Sheet: {sheet_name} handling started')
+        # break
+        TARGET_TAG = sheet_name.replace('_KZ', '').replace('population', 'Population')
+        if 'female' in TARGET_TAG or 'Female' in TARGET_TAG:
+            TARGET_TAG = TARGET_TAG.replace('female', 'Female')
+        elif 'male' in TARGET_TAG:
+            TARGET_TAG = TARGET_TAG.replace('male', 'Male')
         table = excel_file.parse(sheet_name)
 
-        if TARGET_PROPERTY in ['Urban_Male_Population',
+        if TARGET_TAG in ['Urban_Male_Population',
                                'Rural_Male_Population',
                                'Urban_Female_Population',
                                'Rural_Female_Population']:
             continue
 
-        # try:
-        analyze_excel(table, OUTPUT_EXCEL_FILE.replace('.xlsx', '_') + sheet_name + '.xlsx')
-        # except Exception as e:
-            # print(e)
+        if not GET_TAG_FROM_SHEET_NAME:
+            TARGET_TAG = None
 
+        row2individual = {}
+        col2tag = {}
+
+        analyze_excel(table, OUTPUT_EXCEL_FILE.replace('.xlsx', '_') + sheet_name + '.xlsx')
+
+        print(f'Sheet {sheet_name} handling ended.\n')
         # break
     #
     # print(value2individual)
     #
     onto.save(ONTOLOGY_PATH.replace('.owl', '_new.owl'))
+
+
+if __name__ == '__main__':
+    main()
+
