@@ -18,11 +18,12 @@ ONTOLOGY_PATH = "ontologies/Kaz_Water_Ontology_modified.owl"
 onto = None
 data_properties = []
 object_properties = []
+individual_names = []
 
 name2data_property = {}
 name2object_property = {}
+name2individual = {}
 
-value2individual = {}
 row2individual = {}
 col2tag = {}
 
@@ -41,6 +42,13 @@ tag2property = {
     'Rivers_length, km': 'River_length_in_KZ',
     'Lakes_KZ' : 'has_Lakes',
 }
+
+
+def set_property(subject, predicate, object):
+    if subject.__getattr__(predicate) is None:
+        subject.__setattr__(predicate, [object])
+    else:
+        subject.__getattr__(predicate).append(object)
 
 
 def analyze_cells(table, markup):
@@ -75,12 +83,16 @@ def analyze_cells(table, markup):
                 cell_type = 'Number'
             except ValueError:
                 cell_val_lower = cell_val.lower()
-                if cell_val_lower in value2individual:
-                    cell_type = value2individual[cell_val_lower]['individual'].name
+                if cell_val_lower in name2individual:
+                    cell_type = name2individual[cell_val_lower]['individual'].name
+                    print(cell_val_lower, cell_type)
                     # print(f'Value "{cell_val_lower}" classifies as "{cell_type}"')
-                    row2individual[row_idx] = value2individual[cell_val_lower]['individual']
+                    if row_idx not in row2individual:
+                        row2individual[row_idx] = name2individual[cell_val_lower]['individual']
                 else:
                     cell_type_best = find_best_data_property(cell_val)
+                    if cell_type_best is None:
+                        cell_type_best = find_best_object_property(cell_val)
                     cell_type_candidate = tag2property.get(cell_val, cell_type_best)
 
                     cell_type = 'Text'
@@ -148,6 +160,10 @@ def find_best_object_property(tag):
     return find_best_property(object_properties, tag)
 
 
+def find_best_individual(tag):
+    return find_best_property(individual_names, tag)
+
+
 def write_table_to_ontology(table):
     for col_idx, column in enumerate(table):
         if col_idx not in col2tag:
@@ -204,16 +220,22 @@ def write_table_to_ontology(table):
                                     print(f'    Unable to cast value "{value}" to type {val_type}')
                             else:
                                 raise ValueError(f'    prop_range has length {len(prop_range)} - {prop_range}')
-                        if individual.__getattr__(data_property_name) is None:
-                            individual.__setattr__(data_property_name, [f'{value}'])
-                        else:
-                            individual.__getattr__(data_property_name).append(value)
+                        set_property(individual, data_property_name, value)
                     elif object_property_name:
-                        print(f'Obj property: {object_property_name}, {value}')
-                        if individual.__getattr__(object_property_name) is None:
-                            individual.__setattr__(object_property_name, [f'{value}'])
-                        else:
-                            individual.__getattr__(object_property_name).append(value)
+                        value = value.replace(',', '|')
+                        values = value.split('|')
+                        for splitted_value in values:
+                            splitted_value_clean = splitted_value.lower().strip()
+
+                            founded_object = find_best_individual(splitted_value_clean)
+                            if founded_object:
+                                second_object = name2individual[founded_object]
+                                second_object_ind = second_object['individual']
+                                set_property(individual, object_property_name, second_object_ind)
+                                print(f'{individual.name} property: {object_property_name}, {second_object_ind.name}')
+                            else:
+                                print(f'    Object "{splitted_value}" of '
+                                      f'property "{object_property_name}" was not found')
 
 
 def analyze_excel(table, excel_out):
@@ -249,10 +271,11 @@ def load_ontology():
                 pass
 
         # print(individual.is_instance_of, individual.name)
-        value2individual[individual.name.lower()] = {
+        name2individual[individual.name.lower()] = {
             "individual": individual,
             "is_instance_of": "|".join(is_instance_of_str)
         }
+        individual_names.append(individual.name.lower())
 
     print('onto.object_properties()', len(list(onto.object_properties())))
     for prop in onto.object_properties():
@@ -285,7 +308,7 @@ def load_terms():
 
 
 def main():
-    global value2individual
+    global name2individual
     global row2individual
     global col2tag
     global TARGET_TAG
@@ -297,7 +320,7 @@ def main():
 
 
     # return
-    EXCEL_FILE = 'Water_Basins_KZ.xlsx'
+    EXCEL_FILE = 'Water_Basins_KZ_updated.xlsx'
     BASE_PATH = '/Users/titrom/Desktop/Диплом/Tables/PyTableMiner'
     TABLES_PATH = os.path.join(BASE_PATH, 'tables')
     PROCESSED_PATH = os.path.join(BASE_PATH, 'processed')
