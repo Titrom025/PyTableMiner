@@ -12,11 +12,16 @@ from Levenshtein import distance as levenshtein_distance
 
 
 TARGET_TAG = None
+IGNORED_TAGS = ["Urban_Basins_Population", "Rural_Basins_Population"]
 
-ONTOLOGY_PATH = "ontologies/Kaz_Water_Ontology.owl"
+ONTOLOGY_PATH = "ontologies/Kaz_Water_Ontology_modified.owl"
 onto = None
-onto_properties = []
-property_name2property = {}
+data_properties = []
+object_properties = []
+
+name2data_property = {}
+name2object_property = {}
+
 value2individual = {}
 row2individual = {}
 col2tag = {}
@@ -26,8 +31,8 @@ tag2property = {
     'Square (sq km)': 'Square',
     'Square, km²': 'Square',
     'Water_resources_KZ (cubic meter)': 'Water_resources_KZ',
-    'Regions_KZ': 'Regions_KZ_prop',
-    'Regions': 'Regions_KZ_prop',
+    'Regions_KZ': 'Located_in_Regions_KZ',
+    'Regions': 'Located_in_Regions_KZ',
     'Basins_Population': 'Basins_Population',
     'Urban_Basins_Population': 'Urban_Basins_Population',
     'Rural_Basins_Population': 'Rural_Basins_Population',
@@ -72,7 +77,7 @@ def analyze_cells(table, markup):
                 cell_val_lower = cell_val.lower()
                 if cell_val_lower in value2individual:
                     cell_type = value2individual[cell_val_lower]['individual'].name
-                    print(f'Value "{cell_val_lower}" classifies as "{cell_type}"')
+                    # print(f'Value "{cell_val_lower}" classifies as "{cell_type}"')
                     row2individual[row_idx] = value2individual[cell_val_lower]['individual']
                 else:
                     cell_type_best = find_best_data_property(cell_val)
@@ -82,7 +87,7 @@ def analyze_cells(table, markup):
                     if cell_type_candidate is not None:
                         cell_type = cell_type_candidate
                         col2tag[col_idx] = cell_type
-                        print(f'Cell value "{cell_val}" classified as {cell_type}')
+                        # print(f'Cell value "{cell_val}" classified as {cell_type}')
 
             markup.iloc[row_idx, col_idx] = cell_type
 
@@ -120,10 +125,10 @@ def analyze_rows(table, markup):
             continue
 
 
-def find_best_data_property(tag):
+def find_best_property(property_list, tag):
     best_match = None
     best_match_dist = 4
-    for prop in onto_properties:
+    for prop in property_list:
         dist = levenshtein_distance(prop, tag)
         # print(prop, tag, dist)
         if dist < best_match_dist:
@@ -133,6 +138,14 @@ def find_best_data_property(tag):
     if best_match_dist > len(tag) * 0.5:
         return None
     return best_match
+
+
+def find_best_data_property(tag):
+    return find_best_property(data_properties, tag)
+
+
+def find_best_object_property(tag):
+    return find_best_property(object_properties, tag)
 
 
 def write_table_to_ontology(table):
@@ -168,38 +181,39 @@ def write_table_to_ontology(table):
                         individual.__setattr__(TARGET_TAG, str_prop + f'{year}_{value}|')
             else:
                 tag = col2tag[col_idx]
-                print(f'Property {tag}, '
-                      f'Val {value}, '
-                      f'Individual: {individual}')
+                # print(f'Property {tag}, '
+                #       f'Val {value}, '
+                #       f'Individual: {individual}')
 
-                data_prop_name = find_best_data_property(tag)
-                if data_prop_name is None:
-                    print(f'    Property "{tag}" was not found')
+                data_property_name = find_best_data_property(tag)
+                object_property_name = find_best_object_property(tag)
+
+                if data_property_name is None and object_property_name is None:
+                    if tag not in IGNORED_TAGS:
+                        print(f'    Property "{tag}" of "{individual.name}" was not found')
                 else:
-                    prop_range = property_name2property[data_prop_name].range
-                    if prop_range is not None:
-                        if len(prop_range) == 1:
-                            val_type = prop_range[0]
-                            try:
-                                val_modified_type = val_type(value)
-                                value = val_modified_type
-                            except Exception:
-                                print(f'    Unable to cast value "{value}" to type {val_type}')
+                    if data_property_name:
+                        prop_range = name2data_property[data_property_name].range
+                        if prop_range is not None:
+                            if len(prop_range) == 1:
+                                val_type = prop_range[0]
+                                try:
+                                    val_modified_type = val_type(value)
+                                    value = val_modified_type
+                                except Exception:
+                                    print(f'    Unable to cast value "{value}" to type {val_type}')
+                            else:
+                                raise ValueError(f'    prop_range has length {len(prop_range)} - {prop_range}')
+                        if individual.__getattr__(data_property_name) is None:
+                            individual.__setattr__(data_property_name, [f'{value}'])
                         else:
-                            raise ValueError(f'    prop_range has length {len(prop_range)} - {prop_range}')
-                    if individual.__getattr__(data_prop_name) is None:
-                        # try:
-                        individual.__setattr__(data_prop_name, [f'{value}'])
-                        # except Exception:
-                        #     individual.__setattr__(tag, f'{value}')
-                    else:
-                        # try:
-                        individual.__getattr__(data_prop_name).append(value)
-                        # except Exception:
-                        #     str_prop = individual.__getattr__(tag)
-                        #     # print(type(str_prop), dir(str_prop))
-                            # str_prop.insert(f'{value}|')
-                            # individual.__setattr__(tag, str_prop)
+                            individual.__getattr__(data_property_name).append(value)
+                    elif object_property_name:
+                        print(f'Obj property: {object_property_name}, {value}')
+                        if individual.__getattr__(object_property_name) is None:
+                            individual.__setattr__(object_property_name, [f'{value}'])
+                        else:
+                            individual.__getattr__(object_property_name).append(value)
 
 
 def analyze_excel(table, excel_out):
@@ -225,6 +239,7 @@ def load_ontology():
     onto = get_ontology(ONTOLOGY_PATH)
     onto.load()
 
+    print('onto.individuals()', len(list(onto.individuals())))
     for individual in onto.individuals():
         is_instance_of_str = []
         for x in individual.is_instance_of:
@@ -233,20 +248,28 @@ def load_ontology():
             except Exception:
                 pass
 
-        print(individual.is_instance_of, individual.name)
+        # print(individual.is_instance_of, individual.name)
         value2individual[individual.name.lower()] = {
             "individual": individual,
             "is_instance_of": "|".join(is_instance_of_str)
         }
 
-    for prop in onto.properties():
-        onto_properties.append(prop._name)
-        property_name2property[prop._name] = prop
+    print('onto.object_properties()', len(list(onto.object_properties())))
+    for prop in onto.object_properties():
+        object_properties.append(prop.name)
+        name2object_property[prop.name] = prop
+
+    print('onto.properties()', len(list(onto.properties())))
+    for prop in onto.data_properties():
+        data_properties.append(prop.name)
+        name2data_property[prop.name] = prop
 
 
     # print(dir(onto))
     # for cls in onto.classes():
     #     print(cls, cls.__module__, dir(cls))
+
+
 def load_terms():
     global terms
     with open(TERMS_PATH) as csvfile_reader:
@@ -271,15 +294,7 @@ def main():
     # load_terms()
     load_ontology()
 
-    print(onto)
-    # print(dir(onto))
-    print('onto.object_properties()', len(list(onto.object_properties())))
-    for prop in onto.object_properties():
-        print(prop)
-    print('onto.individuals()', len(list(onto.individuals())))
-    # for ind in onto.individuals():
-    #     print(ind)
-    print('onto.object_properties()', len(list(onto.object_properties())))
+
 
     # return
     EXCEL_FILE = 'Water_Basins_KZ.xlsx'
