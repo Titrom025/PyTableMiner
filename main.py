@@ -11,22 +11,17 @@ from owlready2 import *
 from Levenshtein import distance as levenshtein_distance
 
 
+TARGET_TAG = None
+
 ONTOLOGY_PATH = "ontologies/Kaz_Water_Ontology.owl"
-# ONTOLOGY_PATH = "ontologies/Water_Ontology_KZ_modified.owl"
 onto = None
 onto_properties = []
 property_name2property = {}
-
-terms = {}
-
 value2individual = {}
 row2individual = {}
 col2tag = {}
 
-TARGET_TAG = None
-
-
-
+terms = {}
 tag2property = {
     'Square (sq km)': 'Square',
     'Square, km²': 'Square',
@@ -76,17 +71,11 @@ def analyze_cells(table, markup):
             except ValueError:
                 cell_val_lower = cell_val.lower()
                 if cell_val_lower in value2individual:
-                    # cell_type = value2individual[cell_val_lower]['is_instance_of']
                     cell_type = value2individual[cell_val_lower]['individual'].name
-                    # cell_individual = value2individual[cell_val_lower]['individual']
                     print(f'Value "{cell_val_lower}" classifies as "{cell_type}"')
                     row2individual[row_idx] = value2individual[cell_val_lower]['individual']
-                    # markup.iloc[row_idx, col_idx] = cell_type
                 else:
-                    # stemmed_val = stemmer.stem(cell_val)
-                    # stemmed_words.add(stemmed_val)
-
-                    cell_type_best = find_best_matched_property(cell_val)
+                    cell_type_best = find_best_data_property(cell_val)
                     cell_type_candidate = tag2property.get(cell_val, cell_type_best)
 
                     cell_type = 'Text'
@@ -131,13 +120,7 @@ def analyze_rows(table, markup):
             continue
 
 
-# def init_ontology():
-#     for file in os.listdir(ONTOLOGY_PATH):
-#         with open(os.path.join(ONTOLOGY_PATH, file)) as ontology_file:
-#             for term in ontology_file:
-#                 print(term)
-
-def find_best_matched_property(tag):
+def find_best_data_property(tag):
     best_match = None
     best_match_dist = 4
     for prop in onto_properties:
@@ -152,8 +135,7 @@ def find_best_matched_property(tag):
     return best_match
 
 
-
-def write_table_to_ontology(table, markup):
+def write_table_to_ontology(table):
     for col_idx, column in enumerate(table):
         if col_idx not in col2tag:
             continue
@@ -190,11 +172,11 @@ def write_table_to_ontology(table, markup):
                       f'Val {value}, '
                       f'Individual: {individual}')
 
-                prop_name = find_best_matched_property(tag)
-                if prop_name is None:
+                data_prop_name = find_best_data_property(tag)
+                if data_prop_name is None:
                     print(f'    Property "{tag}" was not found')
                 else:
-                    prop_range = property_name2property[prop_name].range
+                    prop_range = property_name2property[data_prop_name].range
                     if prop_range is not None:
                         if len(prop_range) == 1:
                             val_type = prop_range[0]
@@ -205,14 +187,14 @@ def write_table_to_ontology(table, markup):
                                 print(f'    Unable to cast value "{value}" to type {val_type}')
                         else:
                             raise ValueError(f'    prop_range has length {len(prop_range)} - {prop_range}')
-                    if individual.__getattr__(prop_name) is None:
+                    if individual.__getattr__(data_prop_name) is None:
                         # try:
-                        individual.__setattr__(prop_name, [f'{value}'])
+                        individual.__setattr__(data_prop_name, [f'{value}'])
                         # except Exception:
                         #     individual.__setattr__(tag, f'{value}')
                     else:
                         # try:
-                        individual.__getattr__(prop_name).append(value)
+                        individual.__getattr__(data_prop_name).append(value)
                         # except Exception:
                         #     str_prop = individual.__getattr__(tag)
                         #     # print(type(str_prop), dir(str_prop))
@@ -221,16 +203,10 @@ def write_table_to_ontology(table, markup):
 
 
 def analyze_excel(table, excel_out):
-    global stemmed_words
-    global stemmer
-
     columns = list(table.columns)
     row_count, column_count = table.shape
 
     table.replace({np.nan: None}, inplace=True)
-
-    stemmer = snowball.SnowballStemmer('russian')
-    stemmed_words = set()
 
     markup = pd.DataFrame('', index=np.arange(row_count), columns=columns)
 
@@ -238,7 +214,7 @@ def analyze_excel(table, excel_out):
     analyze_rows(table, markup)
     table.columns = columns
 
-    write_table_to_ontology(table, markup)
+    write_table_to_ontology(table)
 
     markup.to_excel(excel_out, columns=columns)
     print(f'Saved marked up table into {excel_out}')
@@ -305,7 +281,6 @@ def main():
     #     print(ind)
     print('onto.object_properties()', len(list(onto.object_properties())))
 
-
     # return
     EXCEL_FILE = 'Water_Basins_KZ.xlsx'
     BASE_PATH = '/Users/titrom/Desktop/Диплом/Tables/PyTableMiner'
@@ -329,12 +304,6 @@ def main():
             TARGET_TAG = TARGET_TAG.replace('male', 'Male')
         table = excel_file.parse(sheet_name)
 
-        # if TARGET_TAG in ['Urban_Male_Population',
-        #                        'Rural_Male_Population',
-        #                        'Urban_Female_Population',
-        #                        'Rural_Female_Population']:
-        #     continue
-
         if not GET_TAG_FROM_SHEET_NAME:
             TARGET_TAG = None
 
@@ -344,10 +313,7 @@ def main():
         analyze_excel(table, OUTPUT_EXCEL_FILE.replace('.xlsx', '_') + sheet_name + '.xlsx')
 
         print(f'Sheet {sheet_name} handling ended.\n')
-        # break
-    #
-    # print(value2individual)
-    #
+
     onto.save(ONTOLOGY_PATH.replace('.owl', '_new.owl'))
 
 
