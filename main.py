@@ -32,8 +32,8 @@ tag2property = {
     'Square (sq km)': 'Square',
     'Square, km²': 'Square',
     'Water_resources_KZ (cubic meter)': 'Water_resources_KZ',
-    'Regions_KZ': 'Located_in_Regions_KZ',
-    'Regions': 'Located_in_Regions_KZ',
+    'Regions_KZ': 'Located_in',
+    'Regions': 'Located_in',
     'Basins_Population': 'Basins_Population',
     'Urban_Basins_Population': 'Urban_Basins_Population',
     'Rural_Basins_Population': 'Rural_Basins_Population',
@@ -43,6 +43,10 @@ tag2property = {
     'Lakes_KZ' : 'has_Lakes',
 }
 
+inverse_property_map = {
+    'Located_in' : 'Is_Part_Of',
+    'Is_Part_Of' : 'Located_in'
+}
 
 def set_property(subject, predicate, object):
     if subject.__getattr__(predicate) is None:
@@ -85,8 +89,6 @@ def analyze_cells(table, markup):
                 cell_val_lower = cell_val.lower()
                 if cell_val_lower in name2individual:
                     cell_type = name2individual[cell_val_lower]['individual'].name
-                    print(cell_val_lower, cell_type)
-                    # print(f'Value "{cell_val_lower}" classifies as "{cell_type}"')
                     if row_idx not in row2individual:
                         row2individual[row_idx] = name2individual[cell_val_lower]['individual']
                 else:
@@ -161,7 +163,10 @@ def find_best_object_property(tag):
 
 
 def find_best_individual(tag):
-    return find_best_property(individual_names, tag)
+    individual = find_best_property(individual_names, tag)
+    if individual is not None:
+        return individual
+    return find_best_property(individual_names, tag + '_region')
 
 
 def write_table_to_ontology(table):
@@ -233,6 +238,16 @@ def write_table_to_ontology(table):
                                 second_object_ind = second_object['individual']
                                 set_property(individual, object_property_name, second_object_ind)
                                 print(f'{individual.name} property: {object_property_name}, {second_object_ind.name}')
+
+                                # TODO: Fix support for inverse properties
+                                # inverse_property = name2object_property[object_property_name].inverse_property
+                                inverse_property = inverse_property_map.get(object_property_name, None)
+
+                                if inverse_property is not None:
+                                    # set_property(second_object_ind, inverse_property.name, individual)
+                                    # print(f'{second_object_ind.name} inverse property: {inverse_property.name}, {individual.name}')
+                                    set_property(second_object_ind, inverse_property, individual)
+                                    print(f'{second_object_ind.name} inverse property: {inverse_property}, {individual.name}')
                             else:
                                 print(f'    Object "{splitted_value}" of '
                                       f'property "{object_property_name}" was not found')
@@ -320,7 +335,7 @@ def main():
 
 
     # return
-    EXCEL_FILE = 'Water_Basins_KZ_updated.xlsx'
+    EXCEL_FILE = 'Water_Basins_KZ.xlsx'
     BASE_PATH = '/Users/titrom/Desktop/Диплом/Tables/PyTableMiner'
     TABLES_PATH = os.path.join(BASE_PATH, 'tables')
     PROCESSED_PATH = os.path.join(BASE_PATH, 'processed')
@@ -351,6 +366,7 @@ def main():
         analyze_excel(table, OUTPUT_EXCEL_FILE.replace('.xlsx', '_') + sheet_name + '.xlsx')
 
         print(f'Sheet {sheet_name} handling ended.\n')
+        # break
 
     onto.save(ONTOLOGY_PATH.replace('.owl', '_new.owl'))
 
