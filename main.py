@@ -8,16 +8,15 @@ import requests
 from nltk.stem import snowball
 from owlready2 import *
 
-
-SOLR_PATH = '/Users/titrom/Desktop/Tables/QTM-master/solr'
-CORES = ['trait_descriptors', 'trait_values', 'trait_properties', 'sgn_tomato_genes', 'sgn_tomato_markers']
+from Levenshtein import distance as levenshtein_distance
 
 
-# ONTOLOGY_PATH = "Population_KZ.owl"
-ONTOLOGY_PATH = "ontologies/Water_Ontology_KZ_modified.owl"
+ONTOLOGY_PATH = "ontologies/Kaz_Water_Ontology.owl"
+# ONTOLOGY_PATH = "ontologies/Water_Ontology_KZ_modified.owl"
 onto = None
+onto_properties = []
+property_name2property = {}
 
-# TERMS_PATH = "terms.csv"
 terms = {}
 
 value2individual = {}
@@ -30,13 +29,17 @@ TARGET_TAG = None
 
 tag2property = {
     'Square (sq km)': 'Square',
+    'Square, km²': 'Square',
     'Water_resources_KZ (cubic meter)': 'Water_resources_KZ',
-    'Regions_KZ': 'Regions_KZ',
+    'Regions_KZ': 'Regions_KZ_prop',
+    'Regions': 'Regions_KZ_prop',
     'Basins_Population': 'Basins_Population',
     'Urban_Basins_Population': 'Urban_Basins_Population',
     'Rural_Basins_Population': 'Rural_Basins_Population',
     'Rivers_of_Basins': 'Rivers_of_Basins',
     'River_length_in_KZ (km)': 'River_length_in_KZ',
+    'Rivers_length, km': 'River_length_in_KZ',
+    'Lakes_KZ' : 'has_Lakes',
 }
 
 
@@ -45,26 +48,53 @@ def analyze_cells(table, markup):
         for row_idx, cell_val in enumerate(table[column]):
             if cell_val is None or cell_val == "":
                 continue
+            cell_val_number = None
+            if type(cell_val) is str:
+                if 'млн' in cell_val:
+                    cell_val_number_str = cell_val.replace('млн', '') \
+                                          .replace(' ', '') \
+                                          .replace(',', '.') \
+                                          .strip()
+                    try:
+                        cell_val_number = float(cell_val_number_str) * 1000000
+                    except Exception:
+                        pass
+                if 'square kilometres' in cell_val:
+                    cell_val_number_str = cell_val[0:cell_val.index('square kilometres')]
+                    cell_val_number_str = cell_val_number_str.replace(',', '.').strip()
+                    try:
+                        cell_val_number = float(cell_val_number_str)
+                    except Exception:
+                        pass
             try:
-                float_val = float(cell_val)
+                if cell_val_number is not None:
+                    float_val = cell_val_number
+                else:
+                    float_val = float(cell_val)
                 table.iloc[row_idx, col_idx] = float_val
                 cell_type = 'Number'
             except ValueError:
                 cell_val_lower = cell_val.lower()
                 if cell_val_lower in value2individual:
-                    cell_type = value2individual[cell_val_lower]['is_instance_of']
+                    # cell_type = value2individual[cell_val_lower]['is_instance_of']
+                    cell_type = value2individual[cell_val_lower]['individual'].name
+                    # cell_individual = value2individual[cell_val_lower]['individual']
                     print(f'Value "{cell_val_lower}" classifies as "{cell_type}"')
                     row2individual[row_idx] = value2individual[cell_val_lower]['individual']
                     # markup.iloc[row_idx, col_idx] = cell_type
                 else:
-                    stemmed_val = stemmer.stem(cell_val)
-                    stemmed_words.add(stemmed_val)
+                    # stemmed_val = stemmer.stem(cell_val)
+                    # stemmed_words.add(stemmed_val)
+
+                    cell_type_best = find_best_matched_property(cell_val)
+                    cell_type_candidate = tag2property.get(cell_val, cell_type_best)
+
                     cell_type = 'Text'
-                    print(f'Text value: "{cell_val}"')
-                    if cell_val in tag2property:
-                        cell_type = tag2property[cell_val]
+                    if cell_type_candidate is not None:
+                        cell_type = cell_type_candidate
                         col2tag[col_idx] = cell_type
                         print(f'Cell value "{cell_val}" classified as {cell_type}')
+
             markup.iloc[row_idx, col_idx] = cell_type
 
 
@@ -107,6 +137,22 @@ def analyze_rows(table, markup):
 #             for term in ontology_file:
 #                 print(term)
 
+def find_best_matched_property(tag):
+    best_match = None
+    best_match_dist = 4
+    for prop in onto_properties:
+        dist = levenshtein_distance(prop, tag)
+        # print(prop, tag, dist)
+        if dist < best_match_dist:
+            best_match_dist = dist
+            best_match = prop
+
+    if best_match_dist > len(tag) * 0.5:
+        return None
+    return best_match
+
+
+
 def write_table_to_ontology(table, markup):
     for col_idx, column in enumerate(table):
         if col_idx not in col2tag:
@@ -135,7 +181,7 @@ def write_table_to_ontology(table, markup):
                 else:
                     try:
                         individual.__getattr__(TARGET_TAG).append(f'{year}_{value}')
-                    except:
+                    except Exception:
                         str_prop = individual.__getattr__(TARGET_TAG)
                         individual.__setattr__(TARGET_TAG, str_prop + f'{year}_{value}|')
             else:
@@ -144,28 +190,40 @@ def write_table_to_ontology(table, markup):
                       f'Val {value}, '
                       f'Individual: {individual}')
 
-                if tag == 'Regions_KZ':
-                    tag += '_prop'
-                if individual.__getattr__(tag) is None:
-                    try:
-                        individual.__setattr__(tag, [f'{value}'])
-                    except Exception:
-                        individual.__setattr__(tag, f'{value}')
+                prop_name = find_best_matched_property(tag)
+                if prop_name is None:
+                    print(f'    Property "{tag}" was not found')
                 else:
-                    try:
-                        individual.__getattr__(tag).append(f'{value}')
-                    except Exception:
-                        str_prop = individual.__getattr__(tag)
-                        individual.__setattr__(tag, str_prop + f'{value}|')
+                    prop_range = property_name2property[prop_name].range
+                    if prop_range is not None:
+                        if len(prop_range) == 1:
+                            val_type = prop_range[0]
+                            try:
+                                val_modified_type = val_type(value)
+                                value = val_modified_type
+                            except Exception:
+                                print(f'    Unable to cast value "{value}" to type {val_type}')
+                        else:
+                            raise ValueError(f'    prop_range has length {len(prop_range)} - {prop_range}')
+                    if individual.__getattr__(prop_name) is None:
+                        # try:
+                        individual.__setattr__(prop_name, [f'{value}'])
+                        # except Exception:
+                        #     individual.__setattr__(tag, f'{value}')
+                    else:
+                        # try:
+                        individual.__getattr__(prop_name).append(value)
+                        # except Exception:
+                        #     str_prop = individual.__getattr__(tag)
+                        #     # print(type(str_prop), dir(str_prop))
+                            # str_prop.insert(f'{value}|')
+                            # individual.__setattr__(tag, str_prop)
 
 
 def analyze_excel(table, excel_out):
     global stemmed_words
     global stemmer
 
-    # init_ontology()
-
-    # table = pd.read_excel(path)
     columns = list(table.columns)
     row_count, column_count = table.shape
 
@@ -199,29 +257,15 @@ def load_ontology():
             except Exception:
                 pass
 
-        if 'Water_Basins_KZ' not in is_instance_of_str:
-            continue
-
         print(individual.is_instance_of, individual.name)
         value2individual[individual.name.lower()] = {
             "individual": individual,
             "is_instance_of": "|".join(is_instance_of_str)
         }
 
-        # individual.__setattr__(TARGET_PROPERTY, [123])
-
-        # for prop in individual.get_properties():
-        #     if prop.namespace.name == 'population_kz':
-        #         prop_value = individual.__getattr__(prop.name)[0]
-        #         print(f'   - {prop} {prop_value}')
-        #         if prop.name == 'Label_ru':
-        #             is_instance_of_str = [str(x.name) for x in individual.is_instance_of]
-        #             value2individual[prop_value.lower()] = {
-        #                 "individual": individual,
-        #                 "is_instance_of": "|".join(is_instance_of_str)
-        #             }
-        #             print(f'Term "{prop_value.lower()}" in term list exists: '
-        #                   f'{prop_value.lower() in terms}')
+    for prop in onto.properties():
+        onto_properties.append(prop._name)
+        property_name2property[prop._name] = prop
 
 
     # print(dir(onto))
@@ -250,6 +294,19 @@ def main():
     GET_TAG_FROM_SHEET_NAME = False
     # load_terms()
     load_ontology()
+
+    print(onto)
+    # print(dir(onto))
+    print('onto.object_properties()', len(list(onto.object_properties())))
+    for prop in onto.object_properties():
+        print(prop)
+    print('onto.individuals()', len(list(onto.individuals())))
+    # for ind in onto.individuals():
+    #     print(ind)
+    print('onto.object_properties()', len(list(onto.object_properties())))
+
+
+    # return
     EXCEL_FILE = 'Water_Basins_KZ.xlsx'
     BASE_PATH = '/Users/titrom/Desktop/Диплом/Tables/PyTableMiner'
     TABLES_PATH = os.path.join(BASE_PATH, 'tables')
@@ -272,11 +329,11 @@ def main():
             TARGET_TAG = TARGET_TAG.replace('male', 'Male')
         table = excel_file.parse(sheet_name)
 
-        if TARGET_TAG in ['Urban_Male_Population',
-                               'Rural_Male_Population',
-                               'Urban_Female_Population',
-                               'Rural_Female_Population']:
-            continue
+        # if TARGET_TAG in ['Urban_Male_Population',
+        #                        'Rural_Male_Population',
+        #                        'Urban_Female_Population',
+        #                        'Rural_Female_Population']:
+        #     continue
 
         if not GET_TAG_FROM_SHEET_NAME:
             TARGET_TAG = None
