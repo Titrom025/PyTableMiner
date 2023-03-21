@@ -14,11 +14,12 @@ from Levenshtein import distance as levenshtein_distance
 TARGET_TAG = None
 IGNORED_TAGS = ["Urban_Basins_Population", "Rural_Basins_Population"]
 
-ONTOLOGY_PATH = "ontologies/Kaz_Water_Ontology_modified.owl"
+# ONTOLOGY_PATH = "ontologies/Kaz_Water_Ontology_modified_fixed.owl"
 onto = None
 data_properties = []
 object_properties = []
 individual_names = []
+class_names = []
 
 name2data_property = {}
 name2object_property = {}
@@ -37,15 +38,19 @@ tag2property = {
     'Basins_Population': 'Basins_Population',
     'Urban_Basins_Population': 'Urban_Basins_Population',
     'Rural_Basins_Population': 'Rural_Basins_Population',
-    'Rivers_of_Basins': 'Rivers_of_Basins',
+    'Rivers_of_Basins': 'Basin_has_River',
     'River_length_in_KZ (km)': 'River_length_in_KZ',
     'Rivers_length, km': 'River_length_in_KZ',
-    'Lakes_KZ' : 'has_Lakes',
+    'Lakes_KZ': 'Lake',
 }
 
 inverse_property_map = {
-    'Located_in' : 'Is_Part_Of',
-    'Is_Part_Of' : 'Located_in'
+    'Located_in' : 'Contains',
+    'Contains' : 'Located_in'
+}
+
+property2class = {
+    'Located_in' : 'Region'
 }
 
 def set_property(subject, predicate, object):
@@ -56,6 +61,7 @@ def set_property(subject, predicate, object):
 
 
 def analyze_cells(table, markup):
+    class_column_idx = -1
     for col_idx, column in enumerate(table):
         for row_idx, cell_val in enumerate(table[column]):
             if cell_val is None or cell_val == "":
@@ -88,9 +94,10 @@ def analyze_cells(table, markup):
             except ValueError:
                 cell_val_lower = cell_val.lower()
                 if cell_val_lower in name2individual:
-                    cell_type = name2individual[cell_val_lower]['individual'].name
                     if row_idx not in row2individual:
-                        row2individual[row_idx] = name2individual[cell_val_lower]['individual']
+                        if class_column_idx == col_idx or class_column_idx == -1:
+                            cell_type = name2individual[cell_val_lower]['individual'].name
+                            row2individual[row_idx] = name2individual[cell_val_lower]['individual']
                 else:
                     cell_type_best = find_best_data_property(cell_val)
                     if cell_type_best is None:
@@ -98,7 +105,11 @@ def analyze_cells(table, markup):
                     cell_type_candidate = tag2property.get(cell_val, cell_type_best)
 
                     cell_type = 'Text'
-                    if cell_type_candidate is not None:
+                    if cell_type_candidate in class_names:
+                        cell_type = f'Class_{cell_type_candidate}'
+                        class_column_idx = col_idx
+                        # col2tag[col_idx] = cell_type
+                    elif cell_type_candidate is not None:
                         cell_type = cell_type_candidate
                         col2tag[col_idx] = cell_type
                         # print(f'Cell value "{cell_val}" classified as {cell_type}')
@@ -144,7 +155,6 @@ def find_best_property(property_list, tag):
     best_match_dist = 4
     for prop in property_list:
         dist = levenshtein_distance(prop, tag)
-        # print(prop, tag, dist)
         if dist < best_match_dist:
             best_match_dist = dist
             best_match = prop
@@ -154,19 +164,28 @@ def find_best_property(property_list, tag):
     return best_match
 
 
-def find_best_data_property(tag):
-    return find_best_property(data_properties, tag)
-
-
-def find_best_object_property(tag):
-    return find_best_property(object_properties, tag)
-
-
-def find_best_individual(tag):
-    individual = find_best_property(individual_names, tag)
+def find_best_data_property(tag, individual=None):
+    specific_class_tag = None
     if individual is not None:
-        return individual
-    return find_best_property(individual_names, tag + '_region')
+        class_name = individual.is_a[0].name
+        specific_class_tag = find_best_property(data_properties, f'{class_name}_{tag}')
+    return specific_class_tag if specific_class_tag else find_best_property(data_properties, f'{tag}')
+
+
+def find_best_object_property(tag, individual=None):
+    specific_class_tag = None
+    if individual is not None:
+        class_name = individual.is_a[0].name
+        specific_class_tag = find_best_property(object_properties, f'{class_name}_{tag}')
+    return specific_class_tag if specific_class_tag else find_best_property(object_properties, f'{tag}')
+
+
+def find_best_individual(tag, property_name=None):
+    specific_class_tag = None
+    if property_name is not None and property_name in property2class:
+        property_class = property2class[property_name].lower()
+        specific_class_tag = find_best_property(individual_names, f'{tag}_{property_class}')
+    return specific_class_tag if specific_class_tag else find_best_property(individual_names, f'{tag}')
 
 
 def write_table_to_ontology(table):
@@ -206,8 +225,8 @@ def write_table_to_ontology(table):
                 #       f'Val {value}, '
                 #       f'Individual: {individual}')
 
-                data_property_name = find_best_data_property(tag)
-                object_property_name = find_best_object_property(tag)
+                data_property_name = find_best_data_property(tag, individual=individual)
+                object_property_name = find_best_object_property(tag, individual=individual)
 
                 if data_property_name is None and object_property_name is None:
                     if tag not in IGNORED_TAGS:
@@ -221,23 +240,25 @@ def write_table_to_ontology(table):
                                 try:
                                     val_modified_type = val_type(value)
                                     value = val_modified_type
+                                    set_property(individual, data_property_name, value)
                                 except Exception:
                                     print(f'    Unable to cast value "{value}" to type {val_type}')
                             else:
                                 raise ValueError(f'    prop_range has length {len(prop_range)} - {prop_range}')
-                        set_property(individual, data_property_name, value)
+                        else:
+                            set_property(individual, data_property_name, value)
                     elif object_property_name:
                         value = value.replace(',', '|')
                         values = value.split('|')
                         for splitted_value in values:
                             splitted_value_clean = splitted_value.lower().strip()
 
-                            founded_object = find_best_individual(splitted_value_clean)
+                            founded_object = find_best_individual(splitted_value_clean, object_property_name)
                             if founded_object:
                                 second_object = name2individual[founded_object]
                                 second_object_ind = second_object['individual']
                                 set_property(individual, object_property_name, second_object_ind)
-                                print(f'{individual.name} property: {object_property_name}, {second_object_ind.name}')
+                                # print(f'{individual.name} property: {object_property_name}, {second_object_ind.name}')
 
                                 # TODO: Fix support for inverse properties
                                 # inverse_property = name2object_property[object_property_name].inverse_property
@@ -247,10 +268,10 @@ def write_table_to_ontology(table):
                                     # set_property(second_object_ind, inverse_property.name, individual)
                                     # print(f'{second_object_ind.name} inverse property: {inverse_property.name}, {individual.name}')
                                     set_property(second_object_ind, inverse_property, individual)
-                                    print(f'{second_object_ind.name} inverse property: {inverse_property}, {individual.name}')
+                                    # print(f'{second_object_ind.name} inverse property: {inverse_property}, {individual.name}')
                             else:
                                 print(f'    Object "{splitted_value}" of '
-                                      f'property "{object_property_name}" was not found')
+                                      f'property "{object_property_name}" for {individual.name} was not found')
 
 
 def analyze_excel(table, excel_out):
@@ -303,9 +324,9 @@ def load_ontology():
         name2data_property[prop.name] = prop
 
 
-    # print(dir(onto))
-    # for cls in onto.classes():
-    #     print(cls, cls.__module__, dir(cls))
+    print('onto.classes()', len(list(onto.classes())))
+    for cls in onto.classes():
+        class_names.append(cls.name)
 
 
 def load_terms():
@@ -327,46 +348,44 @@ def main():
     global row2individual
     global col2tag
     global TARGET_TAG
+    global ONTOLOGY_PATH
+    ONTOLOGY_PATH = "ontologies/Kaz_Water_Ontology_modified_fixed.owl"
+    # ONTOLOGY_PATH = "ontologies/Kaz_Water_Ontology_modified.owl"
 
     GET_TAG_FROM_SHEET_NAME = False
     # load_terms()
     load_ontology()
 
+    # onto.save(ONTOLOGY_PATH.replace('.owl', '_fixed.owl'))
 
 
     # return
-    EXCEL_FILE = 'Water_Basins_KZ.xlsx'
+    # EXCEL_FILES = ['Water_Basins_KZ.xlsx', 'Population_KZ.xlsx']
+    EXCEL_FILES = ['Population_KZ.xlsx']
     BASE_PATH = '/Users/titrom/Desktop/Диплом/Tables/PyTableMiner'
     TABLES_PATH = os.path.join(BASE_PATH, 'tables')
     PROCESSED_PATH = os.path.join(BASE_PATH, 'processed')
-    INPUT_EXCEL_FILE = os.path.join(TABLES_PATH, EXCEL_FILE)
-    OUTPUT_EXCEL_FILE = os.path.join(PROCESSED_PATH, EXCEL_FILE)
+    # INPUT_EXCEL_FILE = os.path.join(TABLES_PATH, EXCEL_FILE)
+    # OUTPUT_EXCEL_FILE = os.path.join(PROCESSED_PATH, EXCEL_FILE)
 
     if not os.path.exists(PROCESSED_PATH):
         os.mkdir(PROCESSED_PATH)
 
-    excel_file = pd.ExcelFile(INPUT_EXCEL_FILE)
+    for excel_file_path in EXCEL_FILES:
+        input_excel_file = os.path.join(TABLES_PATH, excel_file_path)
+        output_excel_file = os.path.join(PROCESSED_PATH, excel_file_path)
+        with pd.ExcelFile(input_excel_file) as excel_file:
+            for sheet_name in excel_file.sheet_names:
+                print(f'Sheet: {sheet_name} handling started')
+                table = excel_file.parse(sheet_name)
 
-    for sheet_name in excel_file.sheet_names:
-        print(f'Sheet: {sheet_name} handling started')
-        # break
-        TARGET_TAG = sheet_name.replace('_KZ', '').replace('population', 'Population')
-        if 'female' in TARGET_TAG or 'Female' in TARGET_TAG:
-            TARGET_TAG = TARGET_TAG.replace('female', 'Female')
-        elif 'male' in TARGET_TAG:
-            TARGET_TAG = TARGET_TAG.replace('male', 'Male')
-        table = excel_file.parse(sheet_name)
+                row2individual = {}
+                col2tag = {}
 
-        if not GET_TAG_FROM_SHEET_NAME:
-            TARGET_TAG = None
+                analyze_excel(table, output_excel_file.replace('.xlsx', '_') + sheet_name + '.xlsx')
 
-        row2individual = {}
-        col2tag = {}
-
-        analyze_excel(table, OUTPUT_EXCEL_FILE.replace('.xlsx', '_') + sheet_name + '.xlsx')
-
-        print(f'Sheet {sheet_name} handling ended.\n')
-        # break
+                print(f'Sheet {sheet_name} handling ended.\n')
+                # break
 
     onto.save(ONTOLOGY_PATH.replace('.owl', '_new.owl'))
 
