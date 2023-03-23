@@ -53,11 +53,25 @@ property2class = {
     'Located_in' : 'Region'
 }
 
-def set_property(subject, predicate, object):
-    if subject.__getattr__(predicate) is None:
-        subject.__setattr__(predicate, [object])
+
+def set_property(subject, predicate, object, year=None):
+    if year is None:
+        if subject.__getattr__(predicate) is None:
+            subject.__setattr__(predicate, [object])
+        else:
+            subject.__getattr__(predicate).append(object)
     else:
-        subject.__getattr__(predicate).append(object)
+        timestamp = onto.Timestamp(f'_year_{year}_'
+                                   f'{subject.name}_'
+                                   f'{predicate}_'
+                                   f'{object}',
+                                   namespace=onto,
+                                   Timestamp_Year=year,
+                                   Timestamp_Value=object)
+        if subject.__getattr__(predicate) is None:
+            subject.__setattr__(predicate, [timestamp])
+        else:
+            subject.__getattr__(predicate).append(timestamp)
 
 
 def analyze_cells(table, markup):
@@ -93,6 +107,7 @@ def analyze_cells(table, markup):
                 cell_type = 'Number'
             except ValueError:
                 cell_val_lower = cell_val.lower()
+                cell_type = 'Text'
                 if cell_val_lower in name2individual:
                     if row_idx not in row2individual:
                         if class_column_idx == col_idx or class_column_idx == -1:
@@ -104,7 +119,6 @@ def analyze_cells(table, markup):
                         cell_type_best = find_best_object_property(cell_val)
                     cell_type_candidate = tag2property.get(cell_val, cell_type_best)
 
-                    cell_type = 'Text'
                     if cell_type_candidate in class_names:
                         cell_type = f'Class_{cell_type_candidate}'
                         class_column_idx = col_idx
@@ -144,10 +158,14 @@ def detect_year(markup, row, row_idx, column_count):
 
 
 def analyze_rows(table, markup):
+    global TARGET_TAG
     row_count, column_count = table.shape
+    has_year = False
     for row_idx, row in table.iterrows():
         if detect_year(markup, row, row_idx, column_count):
-            continue
+            has_year = True
+    if not has_year:
+        TARGET_TAG = None
 
 
 def find_best_property(property_list, tag):
@@ -204,21 +222,68 @@ def write_table_to_ontology(table):
 
             if TARGET_TAG:
                 year = col2tag[col_idx]
-                print(f'Property {TARGET_TAG}, '
-                      f'Val {value}, '
-                      f'Year: {year}, '
-                      f'Individual: {individual}')
-                if individual.__getattr__(TARGET_TAG) is None:
-                    try:
-                        individual.__setattr__(TARGET_TAG, [f'{year}_{value}'])
-                    except Exception:
-                        individual.__setattr__(TARGET_TAG, f'{year}_{value}')
+
+                try:
+                    float(value)
+                except Exception:
+                    continue
+                # try
+                # print(f'Property {TARGET_TAG}, '
+                #       f'Val {value}, '
+                #       f'Year: {year}, '
+                #       f'Individual: {individual}')
+
+                data_property_name = find_best_data_property(TARGET_TAG, individual=individual)
+                object_property_name = find_best_object_property(TARGET_TAG, individual=individual)
+
+                if data_property_name is None and object_property_name is None:
+                    if TARGET_TAG not in IGNORED_TAGS:
+                        print(f'    Property "{TARGET_TAG}" of "{individual.name}" was not found')
                 else:
-                    try:
-                        individual.__getattr__(TARGET_TAG).append(f'{year}_{value}')
-                    except Exception:
-                        str_prop = individual.__getattr__(TARGET_TAG)
-                        individual.__setattr__(TARGET_TAG, str_prop + f'{year}_{value}|')
+                    if data_property_name:
+                        prop_range = name2data_property[data_property_name].range
+                        if prop_range is not None:
+                            if len(prop_range) == 1:
+                                val_type = prop_range[0]
+                                try:
+                                    val_modified_type = val_type(value)
+                                    value = val_modified_type
+                                    set_property(individual, data_property_name, value, year=year)
+                                except Exception:
+                                    print(f'    Unable to cast value "{value}" to type {val_type} for property {data_property_name}')
+                            else:
+                                raise ValueError(f'    prop_range has length {len(prop_range)} - {prop_range}')
+                        else:
+                            # set_property(individual, data_property_name, value)
+                            raise ValueError(f'    Property not set')
+                    elif object_property_name:
+                        prop_range = name2object_property[object_property_name].range
+                        if prop_range is not None:
+                            if len(prop_range) == 1:
+                                val_type = prop_range[0]
+                                try:
+                                    # val_modified_type = val_type(value)
+                                    # value = val_modified_type
+                                    set_property(individual, object_property_name, value, year=year)
+                                except Exception as e:
+                                    print(e)
+                                    print(f'    Unable to cast value "{value}" to type {val_type} for property {object_property_name}')
+                            else:
+                                raise ValueError(f'    prop_range has length {len(prop_range)} - {prop_range}')
+
+                        # raise NotImplementedError('object_property_name handling not implemented')
+
+                # if individual.__getattr__(TARGET_TAG) is None:
+                #     try:
+                #         individual.__setattr__(TARGET_TAG, [f'{year}_{value}'])
+                #     except Exception:
+                #         individual.__setattr__(TARGET_TAG, f'{year}_{value}')
+                # else:
+                #     try:
+                #         individual.__getattr__(TARGET_TAG).append(f'{year}_{value}')
+                #     except Exception:
+                #         str_prop = individual.__getattr__(TARGET_TAG)
+                #         individual.__setattr__(TARGET_TAG, str_prop + f'{year}_{value}|')
             else:
                 tag = col2tag[col_idx]
                 # print(f'Property {tag}, '
@@ -285,6 +350,8 @@ def analyze_excel(table, excel_out):
     analyze_cells(table, markup)
     analyze_rows(table, markup)
     table.columns = columns
+
+    # if TARGET_TAG
 
     write_table_to_ontology(table)
 
@@ -360,8 +427,8 @@ def main():
 
 
     # return
-    # EXCEL_FILES = ['Water_Basins_KZ.xlsx', 'Population_KZ.xlsx']
-    EXCEL_FILES = ['Population_KZ.xlsx']
+    EXCEL_FILES = ['Water_Basins_KZ.xlsx', 'Population_KZ.xlsx']
+    # EXCEL_FILES = ['Population_KZ.xlsx']
     BASE_PATH = '/Users/titrom/Desktop/Диплом/Tables/PyTableMiner'
     TABLES_PATH = os.path.join(BASE_PATH, 'tables')
     PROCESSED_PATH = os.path.join(BASE_PATH, 'processed')
@@ -374,13 +441,16 @@ def main():
     for excel_file_path in EXCEL_FILES:
         input_excel_file = os.path.join(TABLES_PATH, excel_file_path)
         output_excel_file = os.path.join(PROCESSED_PATH, excel_file_path)
+
         with pd.ExcelFile(input_excel_file) as excel_file:
             for sheet_name in excel_file.sheet_names:
                 print(f'Sheet: {sheet_name} handling started')
+                TARGET_TAG = sheet_name.replace('_KZ', '')
                 table = excel_file.parse(sheet_name)
 
                 row2individual = {}
                 col2tag = {}
+
 
                 analyze_excel(table, output_excel_file.replace('.xlsx', '_') + sheet_name + '.xlsx')
 
