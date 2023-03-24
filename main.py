@@ -54,6 +54,38 @@ property2class = {
 }
 
 
+def cast_to_number(value):
+    if type(value) in [int, float]:
+        value_number = value
+    elif type(value) is str:
+        try:
+            value_number = float(value)
+        except Exception:
+            value_number = None
+    else:
+        raise TypeError(f'Unexpected type {type(value)} in cast_to_number method')
+
+    value_str = str(value)
+    if 'млн' in value_str:
+        value_str = value_str.replace('млн', '') \
+            .replace(' ', '') \
+            .replace(',', '.') \
+            .strip()
+        try:
+            value_number = float(value_str) * 1000000
+        except Exception:
+            pass
+    if 'square kilometres' in value_str:
+        value_str = value_str[0:value_str.index('square kilometres')]
+        value_str = value_str.replace(',', '.').strip()
+        try:
+            value_number = float(value_str)
+        except Exception:
+            pass
+
+    return value_number
+
+
 def set_property(subject, predicate, object, year=None):
     if year is None:
         if subject.__getattr__(predicate) is None:
@@ -61,7 +93,7 @@ def set_property(subject, predicate, object, year=None):
         else:
             subject.__getattr__(predicate).append(object)
     else:
-        timestamp = onto.Timestamp(f'_year_{year}_'
+        timestamp = onto.Timestamp(f'~year_{year}_'
                                    f'{subject.name}_'
                                    f'{predicate}_'
                                    f'{object}',
@@ -82,22 +114,7 @@ def analyze_cells(table, markup):
                 continue
             cell_val_number = None
             if type(cell_val) is str:
-                if 'млн' in cell_val:
-                    cell_val_number_str = cell_val.replace('млн', '') \
-                                          .replace(' ', '') \
-                                          .replace(',', '.') \
-                                          .strip()
-                    try:
-                        cell_val_number = float(cell_val_number_str) * 1000000
-                    except Exception:
-                        pass
-                if 'square kilometres' in cell_val:
-                    cell_val_number_str = cell_val[0:cell_val.index('square kilometres')]
-                    cell_val_number_str = cell_val_number_str.replace(',', '.').strip()
-                    try:
-                        cell_val_number = float(cell_val_number_str)
-                    except Exception:
-                        pass
+                cast_to_number(cell_val)
             try:
                 if cell_val_number is not None:
                     float_val = cell_val_number
@@ -108,25 +125,33 @@ def analyze_cells(table, markup):
             except ValueError:
                 cell_val_lower = cell_val.lower()
                 cell_type = 'Text'
-                if cell_val_lower in name2individual:
-                    if row_idx not in row2individual:
-                        if class_column_idx == col_idx or class_column_idx == -1:
-                            cell_type = name2individual[cell_val_lower]['individual'].name
-                            row2individual[row_idx] = name2individual[cell_val_lower]['individual']
-                else:
-                    cell_type_best = find_best_data_property(cell_val)
-                    if cell_type_best is None:
-                        cell_type_best = find_best_object_property(cell_val)
-                    cell_type_candidate = tag2property.get(cell_val, cell_type_best)
 
-                    if cell_type_candidate in class_names:
-                        cell_type = f'Class_{cell_type_candidate}'
-                        class_column_idx = col_idx
-                        # col2tag[col_idx] = cell_type
-                    elif cell_type_candidate is not None:
-                        cell_type = cell_type_candidate
-                        col2tag[col_idx] = cell_type
-                        # print(f'Cell value "{cell_val}" classified as {cell_type}')
+                if col_idx in col2tag:
+                    # Column must have objects
+                    pass
+                else:
+                    founded_object = find_best_individual(cell_val_lower)
+                    if founded_object is not None:
+                        if row_idx not in row2individual:
+                            if class_column_idx == col_idx or class_column_idx == -1:
+                                cell_type = name2individual[founded_object]['individual'].name
+                                row2individual[row_idx] = name2individual[founded_object]['individual']
+                    else:
+                        cell_type_candidate = find_best_data_property(cell_val)
+                        if cell_type_candidate is None:
+                            cell_type_candidate = find_best_object_property(cell_val)
+                        if cell_type_candidate is None:
+                            cell_type_candidate = find_best_class(cell_val)
+                        cell_type_candidate = tag2property.get(cell_val, cell_type_candidate)
+
+                        if cell_type_candidate in class_names:
+                            cell_type = f'Class_{cell_type_candidate}'
+                            class_column_idx = col_idx
+                            # col2tag[col_idx] = cell_type
+                        elif cell_type_candidate is not None:
+                            cell_type = cell_type_candidate
+                            col2tag[col_idx] = cell_type
+                            # print(f'Cell value "{cell_val}" classified as {cell_type}')
 
             markup.iloc[row_idx, col_idx] = cell_type
 
@@ -206,6 +231,10 @@ def find_best_individual(tag, property_name=None):
     return specific_class_tag if specific_class_tag else find_best_property(individual_names, f'{tag}')
 
 
+def find_best_class(tag):
+    return find_best_property(class_names, f'{tag}')
+
+
 def write_table_to_ontology(table):
     for col_idx, column in enumerate(table):
         if col_idx not in col2tag:
@@ -227,11 +256,6 @@ def write_table_to_ontology(table):
                     float(value)
                 except Exception:
                     continue
-                # try
-                # print(f'Property {TARGET_TAG}, '
-                #       f'Val {value}, '
-                #       f'Year: {year}, '
-                #       f'Individual: {individual}')
 
                 data_property_name = find_best_data_property(TARGET_TAG, individual=individual)
                 object_property_name = find_best_object_property(TARGET_TAG, individual=individual)
@@ -246,6 +270,10 @@ def write_table_to_ontology(table):
                             if len(prop_range) == 1:
                                 val_type = prop_range[0]
                                 try:
+                                    if val_type in [float, int]:
+                                        value_casted = cast_to_number(value)
+                                        if value_casted is not None:
+                                            value = value_casted
                                     val_modified_type = val_type(value)
                                     value = val_modified_type
                                     set_property(individual, data_property_name, value, year=year)
@@ -262,11 +290,8 @@ def write_table_to_ontology(table):
                             if len(prop_range) == 1:
                                 val_type = prop_range[0]
                                 try:
-                                    # val_modified_type = val_type(value)
-                                    # value = val_modified_type
                                     set_property(individual, object_property_name, value, year=year)
                                 except Exception as e:
-                                    print(e)
                                     print(f'    Unable to cast value "{value}" to type {val_type} for property {object_property_name}')
                             else:
                                 raise ValueError(f'    prop_range has length {len(prop_range)} - {prop_range}')
@@ -303,13 +328,17 @@ def write_table_to_ontology(table):
                             if len(prop_range) == 1:
                                 val_type = prop_range[0]
                                 try:
+                                    if val_type in [float, int]:
+                                        value_casted = cast_to_number(value)
+                                        if value_casted is not None:
+                                            value = value_casted
                                     val_modified_type = val_type(value)
                                     value = val_modified_type
                                     set_property(individual, data_property_name, value)
                                 except Exception:
                                     print(f'    Unable to cast value "{value}" to type {val_type}')
                             else:
-                                raise ValueError(f'    prop_range has length {len(prop_range)} - {prop_range}')
+                                raise ValueError(f'    prop_range has length {len(prop_range)} - {data_property_name}')
                         else:
                             set_property(individual, data_property_name, value)
                     elif object_property_name:
@@ -427,6 +456,7 @@ def main():
 
 
     # return
+    # EXCEL_FILES = ['Water_Basins_KZ_1.xlsx', 'Population_KZ.xlsx']
     EXCEL_FILES = ['Water_Basins_KZ.xlsx', 'Population_KZ.xlsx']
     # EXCEL_FILES = ['Population_KZ.xlsx']
     BASE_PATH = '/Users/titrom/Desktop/Диплом/Tables/PyTableMiner'
