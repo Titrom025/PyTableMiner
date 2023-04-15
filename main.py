@@ -8,150 +8,14 @@ import requests
 from nltk.stem import snowball
 from owlready2 import *
 
-from Levenshtein import distance as levenshtein_distance
-
-
-IGNORED_TAGS = ["Urban_Basins_Population", "Rural_Basins_Population"]
+from ontology_utils import export_data_to_ontology, load_ontology
+from utils import OntologyData, TableData, cast_to_number, \
+    find_data_property_match, find_object_property_match,\
+    find_object_match, find_class_match, find_best_property
+from parsers import get_tables_from_excel
 
 ontology_data = None
-
-class OntologyData:
-    def __init__(self):
-        self.ontology = None
-        self.object_names = []
-        self.data_properties = []
-        self.object_properties = []
-        self.class_names = []
-
-        self.name2data_property = {}
-        self.name2object_property = {}
-        self.name2object = {}
-
-
-class TableData:
-    def __init__(self):
-        self.table = None
-        self.markup = None
-
-        self.row2object = {}
-        self.row2predicate = {}
-        self.row2date = {}
-
-        self.col2object = {}
-        self.col2predicate = {}
-        self.col2date = {}
-
-        self.target_tag = None
-        self.sheet_name = ""
-
-
 terms = {}
-tag2property = {
-    'Square (sq km)': 'Square',
-    'Square, km²': 'Square',
-    'Surface area': 'Lake_Square',
-    'Water_resources_KZ (cubic meter)': 'Water_resources_KZ',
-    'Regions_KZ': 'Located_in',
-    'Regions': 'Located_in',
-    'Basins_Population': 'Basins_Population',
-    'Urban_Basins_Population': 'Urban_Basins_Population',
-    'Rural_Basins_Population': 'Rural_Basins_Population',
-    'Rivers_of_Basins': 'Basin_has_River',
-    'River_length_in_KZ (km)': 'River_length_in_KZ',
-    'Rivers_length, km': 'River_length_in_KZ',
-    'Lakes_KZ': 'Lake',
-    'Average_annual_water_consumption, m3/s': 'Average_annual_water_consumption',
-    'Water_and_energy_resources, Power, thousand kW': 'Water_and_energy_resources_Power',
-    'Water and energy resources, Energy, million kWh/year': 'Water_and_energy_resources_Energy',
-    'River_fall, m': 'River_Fall',
-    'Код поста': 'Observation_Post',
-    'Дата' : 'Date',
-    'Значение': 'Value'
-}
-
-inverse_property_map = {
-    'Located_in': 'Contains',
-    'Contains': 'Located_in',
-    'River_in_Basin': 'Basin_has_River',
-    'Basin_has_River': 'River_in_Basin',
-}
-
-property2class = {
-    'Located_in' : 'Region'
-}
-
-
-def cast_to_number(value):
-    if type(value) in [int, float]:
-        value_number = value
-    elif type(value) is str:
-        try:
-            value_number = float(value)
-        except Exception:
-            value_number = None
-    else:
-        raise TypeError(f'Unexpected type {type(value)} in cast_to_number method')
-
-    value_str = str(value)
-    if 'млн' in value_str or 'km' in value_str:
-        value_str = value_str\
-            .replace('млн', '') \
-            .replace('km', '') \
-            .replace(' ', '') \
-            .replace(',', '.') \
-            .strip()
-        try:
-            value_number = float(value_str) * 1000000
-        except Exception:
-            pass
-    if 'square kilometre' in value_str:
-        value_str = value_str[0:value_str.index('square kilometre')]
-        value_str = value_str.replace(',', '.').strip()
-        try:
-            value_number = float(value_str)
-        except Exception:
-            pass
-
-    return value_number
-
-
-def set_property(subject, predicate, object, year=None, date=None):
-    try:
-        if date is not None:
-            timestamp = ontology_data.ontology.Timestamp(f'~{subject.name}_'
-                                       f'{predicate}_'
-                                       f'{date.year}_'
-                                       f'{date.month}_'
-                                       f'{date.day}',
-                                       namespace=ontology_data.ontology,
-                                       Timestamp_Year=int(date.year),
-                                       Timestamp_Month=int(date.month),
-                                       Timestamp_Day=int(date.day),
-                                       Timestamp_Value=float(object))
-            if subject.__getattr__(predicate) is None:
-                subject.__setattr__(predicate, [timestamp])
-            else:
-                subject.__getattr__(predicate).append(timestamp)
-        else:
-            if year is None:
-                if subject.__getattr__(predicate) is None:
-                    subject.__setattr__(predicate, [object])
-                else:
-                    subject.__getattr__(predicate).append(object)
-            else:
-                timestamp = ontology_data.ontology.Timestamp(f'~year_{year}_'
-                                           f'{subject.name}_'
-                                           f'{predicate}_'
-                                           f'{object}',
-                                           namespace=ontology_data.ontology,
-                                           Timestamp_Year=year,
-                                           Timestamp_Value=object)
-                if subject.__getattr__(predicate) is None:
-                    subject.__setattr__(predicate, [timestamp])
-                else:
-                    subject.__getattr__(predicate).append(timestamp)
-    except Exception as e:
-        print('e', e)
 
 
 def analyze_cells(table_data):
@@ -185,12 +49,12 @@ def analyze_cells(table_data):
                     cell_val_lower = cell_val.lower().strip()
                     cell_type = 'Text'
 
-                    founded_object = find_object_match(cell_val_lower)
+                    founded_object = find_object_match(ontology_data, cell_val_lower)
                     if class_column_idx == col_idx \
                             and col_idx in table_data.col2predicate \
                             and table_data.col2predicate[col_idx] == 'Observation_Post':
                         post_name = f'Post_{cell_val_lower}'
-                        post_object = find_object_match(post_name, max_dist=0)
+                        post_object = find_object_match(ontology_data, post_name, max_dist=0)
                         if post_object is None:
                             created_post = ontology_data.ontology.Observation_Post(post_name)
                             ontology_data.name2object[created_post.name.lower()] = {
@@ -209,13 +73,13 @@ def analyze_cells(table_data):
                                 cell_type = ontology_data.name2object[founded_object]['individual'].name
                                 table_data.row2object[row_idx] = ontology_data.name2object[founded_object]['individual']
 
-                    cell_type_candidate = find_data_property_match(cell_val)
+                    cell_type_candidate = find_data_property_match(ontology_data, cell_val)
                     if cell_type_candidate is None:
-                        cell_type_candidate = find_object_property_match(cell_val)
+                        cell_type_candidate = find_object_property_match(ontology_data, cell_val)
                     if cell_type_candidate is None:
-                        cell_type_candidate = find_class_match(cell_val)
+                        cell_type_candidate = find_class_match(ontology_data, cell_val)
                     if cell_type_candidate is None:
-                        cell_type_candidate = tag2property.get(cell_val, None)
+                        cell_type_candidate = ontology_data.tag2property.get(cell_val, None)
 
                     if class_column_idx == -1 and cell_type_candidate in ontology_data.class_names:
                         cell_type = f'Class_{cell_type_candidate}'
@@ -279,201 +143,10 @@ def analyze_rows(table_data):
         table_data.target_tag = None
 
 
-def find_best_property(property_list, tag, max_dist=0.3):
-    tag = tag.replace('_GBD', '')
-    best_match = None
-    best_match_dist = 4
-    for prop in property_list:
-        dist = levenshtein_distance(prop, tag)
-        if dist < best_match_dist:
-            best_match_dist = dist
-            best_match = prop
-
-    if best_match_dist > len(tag) * max_dist:
-        return None
-    return best_match
-
-
-def find_data_property_match(tag, individual=None, max_dist=0.3):
-    specific_class_tag = None
-    if individual is not None:
-        class_name = individual.is_a[0].name
-        specific_class_tag = find_best_property(ontology_data.data_properties, f'{class_name}_{tag}')
-    return specific_class_tag if specific_class_tag else find_best_property(ontology_data.data_properties, f'{tag}', max_dist)
-
-
-def find_object_property_match(tag, individual=None, max_dist=0.3):
-    specific_class_tag = None
-    if individual is not None:
-        class_name = individual.is_a[0].name
-        specific_class_tag = find_best_property(ontology_data.object_properties, f'{class_name}_{tag}')
-    return specific_class_tag if specific_class_tag else find_best_property(ontology_data.object_properties, f'{tag}', max_dist)
-
-
-def find_object_match(tag, property_name=None, max_dist=0.3):
-    specific_class_tag = None
-    if property_name is not None and property_name in property2class:
-        property_class = property2class[property_name].lower()
-        specific_class_tag = find_best_property(ontology_data.object_names, f'{tag}_{property_class}')
-    return specific_class_tag if specific_class_tag else find_best_property(ontology_data.object_names, f'{tag}', max_dist)
-
-
-def find_class_match(tag):
-    return find_best_property(ontology_data.class_names, f'{tag}')
-
-
-def write_table_to_ontology(table_data):
-    for col_idx, column in enumerate(table_data.table):
-        if col_idx not in table_data.col2predicate:
-            continue
-        if 'Observation_Post' == table_data.col2predicate[col_idx]:
-            continue
-        for row_idx, cell_val in enumerate(table_data.table[column]):
-            if row_idx not in table_data.row2object:
-                continue
-            if table_data.markup.iloc[row_idx, col_idx] == 'Date':
-                continue
-            # try:
-            value = table_data.table.iloc[row_idx, col_idx]
-            # except Exception:
-            #     value = table.iloc[row_idx, col_idx]
-
-            if value is None:
-                continue
-
-            individual = table_data.row2object[row_idx]
-
-            if table_data.target_tag:
-                year = table_data.col2predicate[col_idx]
-                try:
-                    float(year)
-                except Exception:
-                    year = None
-                try:
-                    float(value)
-                except Exception:
-                    continue
-
-                data_property_name = find_data_property_match(table_data.target_tag, individual=individual)
-                object_property_name = find_object_property_match(table_data.target_tag, individual=individual)
-
-                if data_property_name is None and object_property_name is None:
-                    if table_data.target_tag not in IGNORED_TAGS:
-                        print(f'    Property "{table_data.target_tag}" of "{individual.name}" was not found')
-                else:
-                    if data_property_name:
-                        prop_range = ontology_data.name2data_property[data_property_name].range
-                        if prop_range is not None:
-                            if len(prop_range) == 1:
-                                val_type = prop_range[0]
-                                try:
-                                    if val_type in [float, int]:
-                                        value_casted = cast_to_number(value)
-                                        if value_casted is not None:
-                                            value = value_casted
-                                    val_modified_type = val_type(value)
-                                    value = val_modified_type
-                                    set_property(individual, data_property_name, value, year=year)
-                                    table_data.markup.iloc[row_idx, col_idx] = f'{year}_{value}'
-                                except Exception:
-                                    print(f'    Unable to cast value "{value}" to type {val_type} for data property {data_property_name}')
-                            else:
-                                raise ValueError(f'    prop_range has length {len(prop_range)} - {prop_range} for property {data_property_name}')
-                        else:
-                            # set_property(individual, data_property_name, value)
-                            raise ValueError(f'    Property not set')
-                    elif object_property_name:
-                        prop_range = ontology_data.name2object_property[object_property_name].range
-                        if prop_range is not None:
-                            if len(prop_range) == 1:
-                                val_type = prop_range[0]
-                                try:
-                                    if type(individual) is ontology_data.ontology.Observation_Post and object_property_name in ['Water_Consumption', 'Water_Level']:
-                                        row_date = None
-                                        if row_idx in table_data.row2date:
-                                            row_date = table_data.row2date[row_idx]
-                                        set_property(individual, object_property_name, value, date=row_date)
-                                        table_data.markup.iloc[row_idx, col_idx] = f'Date_{value}'
-                                    else:
-                                        set_property(individual, object_property_name, value, year=year)
-                                        table_data.markup.iloc[row_idx, col_idx] = f'{year}_{value}'
-                                except Exception:
-                                    print(f'    Unable to cast value "{value}" to type {val_type} for object property {object_property_name}')
-                            else:
-                                raise ValueError(f'    prop_range has length {len(prop_range)} - {prop_range}')
-
-                        # raise NotImplementedError('object_property_name handling not implemented')
-            else:
-                tag = table_data.col2predicate[col_idx]
-                # print(f'Property {tag}, '
-                #       f'Val {value}, '
-                #       f'Individual: {individual}')
-
-                if tag in tag2property:
-                    tag = tag2property[tag]
-                data_property_name = find_data_property_match(tag, individual=individual)
-                object_property_name = find_object_property_match(tag, individual=individual)
-
-                if data_property_name is None and object_property_name is None:
-                    if tag not in IGNORED_TAGS:
-                        print(f'    Property "{tag}" of "{individual.name}" was not found')
-                else:
-                    if data_property_name:
-                        prop_range = ontology_data.name2data_property[data_property_name].range
-                        if prop_range is not None:
-                            if len(prop_range) == 1:
-                                val_type = prop_range[0]
-                                try:
-                                    if val_type in [float, int]:
-                                        value_casted = cast_to_number(value)
-                                        if value_casted is not None:
-                                            value = value_casted
-                                    else:
-                                        print(val_type)
-                                    val_modified_type = val_type(value)
-                                    value = val_modified_type
-                                    set_property(individual, data_property_name, value)
-                                    table_data.markup.iloc[row_idx, col_idx] = f'{value}'
-                                except Exception:
-                                    print(f'    Unable to cast value "{value}" to type {val_type}')
-                            else:
-                                raise ValueError(f'    prop_range has length {len(prop_range)} - {data_property_name}')
-                        else:
-                            set_property(individual, data_property_name, value)
-                            table_data.markup.iloc[row_idx, col_idx] = f'{value}'
-                    elif object_property_name:
-                        value = value.replace(',', '|').replace('/', '|')
-                        values = value.split('|')
-                        table_data.markup.iloc[row_idx, col_idx] = f'{value}'
-                        for splitted_value in values:
-                            splitted_value_clean = splitted_value.lower().strip()
-
-                            founded_object = find_object_match(splitted_value_clean, object_property_name)
-                            if founded_object:
-                                second_object = ontology_data.name2object[founded_object]
-                                second_object_ind = second_object['individual']
-                                set_property(individual, object_property_name, second_object_ind)
-                                # print(f'{individual.name} property: {object_property_name}, {second_object_ind.name}')
-
-                                # TODO: Fix support for inverse properties
-                                # inverse_property = ontology_data.name2object_property[object_property_name].inverse_property
-                                inverse_property = inverse_property_map.get(object_property_name, None)
-
-                                if inverse_property is not None:
-                                    # set_property(second_object_ind, inverse_property.name, individual)
-                                    # print(f'{second_object_ind.name} inverse property: {inverse_property}, {individual.name}')
-                                    set_property(second_object_ind, inverse_property, individual)
-
-                                    # print(f'{second_object_ind.name} inverse property: {inverse_property}, {individual.name}')
-                            else:
-                                print(f'    Object "{splitted_value}" of '
-                                      f'property "{object_property_name}" for {individual.name} was not found')
-
-
 def analyze_file(input_file, output_folder):
     print(f'Handling: {input_file}')
     if os.path.splitext(input_file)[1] == '.xlsx':
-        for table_data in get_table_from_excel(input_file):
+        for table_data in get_tables_from_excel(input_file):
             print(f'Sheet: {table_data.sheet_name} handling started')
             analyze_table(table_data)
             markup_save_path = os.path.join(output_folder, table_data.sheet_name + '.xlsx')
@@ -483,37 +156,6 @@ def analyze_file(input_file, output_folder):
             print(f'Sheet {table_data.sheet_name} handling ended.\n')
     else:
         raise ValueError(f'Unsupported file format: {os.path.splitext(input_file)[1]}')
-
-
-def get_table_from_excel(input_excel_file):
-    with pd.ExcelFile(input_excel_file) as excel_file:
-        for sheet_name in excel_file.sheet_names:
-            target_tag = sheet_name.replace('_KZ', '')
-            if 'GBD_Water_Consumption' in input_excel_file:
-                target_tag = 'Water_Consumption'
-            elif 'GBD_Water_Level_IBB' in input_excel_file:
-                target_tag = 'Water_Level'
-            table = excel_file.parse(sheet_name)
-            column_names = []
-            has_useful_names = False
-            for name in table.columns:
-                if 'Unnamed' in name:
-                    column_names.append('')
-                else:
-                    column_names.append(name)
-                    has_useful_names = True
-
-            if has_useful_names:
-                table.loc[-1] = column_names
-                table.index = table.index + 1
-                table.sort_index(inplace=True)
-
-            table_data = TableData()
-            table_data.target_tag = target_tag
-            table_data.table = table
-            table_data.sheet_name = sheet_name
-
-            yield table_data
 
 
 def analyze_table(table_data):
@@ -527,92 +169,33 @@ def analyze_table(table_data):
     analyze_cells(table_data)
     analyze_rows(table_data)
 
-    write_table_to_ontology(table_data)
+    export_data_to_ontology(table_data, ontology_data)
 
 
-def load_ontology(ontology_path):
-    global ontology_data
-    ontology_data = OntologyData()
-    ontology_data.ontology = get_ontology(ontology_path)
-    ontology_data.ontology.load()
-
-    print('ontology_data.ontology.individuals()', len(list(ontology_data.ontology.individuals())))
-    for individual in ontology_data.ontology.individuals():
-        object_name = individual.name.lower()
-        if object_name[0] == '~':
-            continue
-        is_instance_of_str = []
-        for x in individual.is_instance_of:
-            try:
-                is_instance_of_str.append(str(x.name))
-            except Exception:
-                pass
-
-        ontology_data.name2object[object_name] = {
-            "individual": individual,
-            "is_instance_of": "|".join(is_instance_of_str)
-        }
-        ontology_data.object_names.append(object_name)
-
-    print('ontology_data.ontology.object_properties()', len(list(ontology_data.ontology.object_properties())))
-    for prop in ontology_data.ontology.object_properties():
-        ontology_data.object_properties.append(prop.name)
-        ontology_data.name2object_property[prop.name] = prop
-
-    print('ontology_data.ontology.properties()', len(list(ontology_data.ontology.properties())))
-    for prop in ontology_data.ontology.data_properties():
-        ontology_data.data_properties.append(prop.name)
-        ontology_data.name2data_property[prop.name] = prop
-
-    print('ontology_data.ontology.classes()', len(list(ontology_data.ontology.classes())))
-    for cls in ontology_data.ontology.classes():
-        ontology_data.class_names.append(cls.name)
-
-
-def load_terms():
-    global terms
-    with open(TERMS_PATH) as csvfile_reader:
-        csv_reader = csv.reader(csvfile_reader, delimiter=';')
-        for line_idx, csv_line in enumerate(csv_reader):
-            rus_term, eng_term, rus_short, eng_short = csv_line
-            terms[eng_term.lower()] = {
-                "rus_term": rus_term,
-                "eng_term": eng_term,
-                "rus_short": rus_short,
-                "eng_short": eng_short
-            }
 
 
 def main():
-    ONTOLOGY_PATH = "ontologies/Kaz_Water_Ontology_modified_fixed.owl"
-    # ONTOLOGY_PATH = "ontologies/Kaz_Water_Ontology_modified_fixed_new.owl"
+    global ontology_data
+    ontology_path = "ontologies/Kaz_Water_Ontology_modified_fixed.owl"
 
     # load_terms()
-    load_ontology(ONTOLOGY_PATH)
+    ontology_data = load_ontology(ontology_path)
 
-    # ontology_data.ontology.save(ONTOLOGY_PATH.replace('.owl', '_fixed.owl'))
+    # excel_files = ['Water_Basins_KZ.xlsx', 'Population_KZ.xlsx']
+    # excel_files = ['Water_Basins_KZ.xlsx']
+    excel_files = ['Water_Basins_KZ.xlsx', 'Population_KZ.xlsx', 'GBD_Water_Consumption', 'GBD_Water_Level_IBB']
+    base_path = '/Users/titrom/Desktop/Диплом/Tables/PyTableMiner'
+    tables_path = os.path.join(base_path, 'tables')
+    processed_path = os.path.join(base_path, 'processed')
 
+    if not os.path.exists(processed_path):
+        os.mkdir(processed_path)
 
-    # return
-    # EXCEL_FILES = ['Water_Basins_KZ.xlsx', 'Population_KZ.xlsx']
-    # EXCEL_FILES = ['Water_Basins_KZ.xlsx']
-    EXCEL_FILES = ['Water_Basins_KZ.xlsx', 'Population_KZ.xlsx', 'GBD_Water_Consumption', 'GBD_Water_Level_IBB']
-    # EXCEL_FILES = ['GBD_Water_Level_IBB']
-
-    BASE_PATH = '/Users/titrom/Desktop/Диплом/Tables/PyTableMiner'
-    TABLES_PATH = os.path.join(BASE_PATH, 'tables')
-    PROCESSED_PATH = os.path.join(BASE_PATH, 'processed')
-    # INPUT_EXCEL_FILE = os.path.join(TABLES_PATH, EXCEL_FILE)
-    # OUTPUT_EXCEL_FILE = os.path.join(PROCESSED_PATH, EXCEL_FILE)
-
-    if not os.path.exists(PROCESSED_PATH):
-        os.mkdir(PROCESSED_PATH)
-
-    for path in EXCEL_FILES:
-        target_path = os.path.join(TABLES_PATH, path)
+    for path in excel_files:
+        target_path = os.path.join(tables_path, path)
         if os.path.isdir(target_path):
             files = [os.path.join(path, file) for file in os.listdir(target_path)]
-            output_path = os.path.join(PROCESSED_PATH, path)
+            output_path = os.path.join(processed_path, path)
             if not os.path.exists(output_path):
                 os.makedirs(output_path)
         else:
@@ -622,10 +205,12 @@ def main():
 
         for file_idx, excel_file_path in enumerate(files):
             print(f'File {file_idx + 1}/{len(files)}')
-            input_excel_file = os.path.join(TABLES_PATH, excel_file_path)
-            analyze_file(input_excel_file, PROCESSED_PATH)
+            input_excel_file = os.path.join(tables_path, excel_file_path)
+            analyze_file(input_excel_file, processed_path)
+            if file_idx == 2:
+                break
 
-    ontology_data.ontology.save(ONTOLOGY_PATH.replace('.owl', '_new.owl'))
+    ontology_data.save2newfile()
 
 
 if __name__ == '__main__':
