@@ -11,7 +11,6 @@ from owlready2 import *
 from Levenshtein import distance as levenshtein_distance
 
 
-TARGET_TAG = None
 IGNORED_TAGS = ["Urban_Basins_Population", "Rural_Basins_Population"]
 
 onto = None
@@ -24,13 +23,23 @@ name2data_property = {}
 name2object_property = {}
 name2object = {}
 
-row2object = {}
-row2predicate = {}
-row2date = {}
 
-col2object = {}
-col2predicate = {}
-col2date = {}
+class TableData:
+    def __init__(self):
+        self.table = None
+        self.markup = None
+
+        self.row2object = {}
+        self.row2predicate = {}
+        self.row2date = {}
+
+        self.col2object = {}
+        self.col2predicate = {}
+        self.col2date = {}
+
+        self.target_tag = None
+        self.sheet_name = ""
+
 
 terms = {}
 tag2property = {
@@ -141,32 +150,32 @@ def set_property(subject, predicate, object, year=None, date=None):
         print('e', e)
 
 
-def analyze_cells(table, markup):
+def analyze_cells(table_data):
     class_column_idx = -1
-    for col_idx, column in enumerate(table):
-        for row_idx, cell_val in enumerate(table[column]):
+    for col_idx, column in enumerate(table_data.table):
+        for row_idx, cell_val in enumerate(table_data.table[column]):
             if cell_val is None or cell_val == "" or cell_val == "-":
                 continue
 
             if type(cell_val) is datetime.datetime:
                 cell_type = 'Date'
-                col2predicate[col_idx] = cell_type
-                row2date[row_idx] = cell_val
+                table_data.col2predicate[col_idx] = cell_type
+                table_data.row2date[row_idx] = cell_val
             else:
                 cell_val_number = None
                 if type(cell_val) is str:
                     cast_to_number(cell_val)
                 try:
                     if class_column_idx == col_idx \
-                            and col_idx in col2predicate \
-                            and col2predicate[col_idx] == 'Observation_Post':
+                            and col_idx in table_data.col2predicate \
+                            and table_data.col2predicate[col_idx] == 'Observation_Post':
                         cell_val = str(cell_val)
                         raise ValueError('It must be a new object')
                     if cell_val_number is not None:
                         float_val = cell_val_number
                     else:
                         float_val = float(cell_val)
-                    table.iloc[row_idx, col_idx] = float_val
+                    table_data.table.iloc[row_idx, col_idx] = float_val
                     cell_type = 'Number'
                 except ValueError:
                     cell_val_lower = cell_val.lower().strip()
@@ -174,8 +183,8 @@ def analyze_cells(table, markup):
 
                     founded_object = find_object_match(cell_val_lower)
                     if class_column_idx == col_idx \
-                            and col_idx in col2predicate \
-                            and col2predicate[col_idx] == 'Observation_Post':
+                            and col_idx in table_data.col2predicate \
+                            and table_data.col2predicate[col_idx] == 'Observation_Post':
                         post_name = f'Post_{cell_val_lower}'
                         post_object = find_object_match(post_name, max_dist=0)
                         if post_object is None:
@@ -187,14 +196,14 @@ def analyze_cells(table, markup):
                             object_names.append(created_post.name.lower())
                         else:
                             post_name = post_object
-                        if row_idx not in row2object:
+                        if row_idx not in table_data.row2object:
                             cell_type = name2object[post_name.lower()]['individual'].name
-                            row2object[row_idx] = name2object[post_name.lower()]['individual']
+                            table_data.row2object[row_idx] = name2object[post_name.lower()]['individual']
                     elif founded_object is not None:
-                        if row_idx not in row2object:
+                        if row_idx not in table_data.row2object:
                             if class_column_idx == col_idx or class_column_idx == -1:
                                 cell_type = name2object[founded_object]['individual'].name
-                                row2object[row_idx] = name2object[founded_object]['individual']
+                                table_data.row2object[row_idx] = name2object[founded_object]['individual']
 
                     cell_type_candidate = find_data_property_match(cell_val)
                     if cell_type_candidate is None:
@@ -210,21 +219,21 @@ def analyze_cells(table, markup):
                         # col2tag[col_idx] = cell_type
 
                         if cell_type_candidate == 'Observation_Post':
-                            col2predicate[col_idx] = cell_type_candidate
+                            table_data.col2predicate[col_idx] = cell_type_candidate
 
                     elif cell_type_candidate is not None:
                         cell_type = cell_type_candidate
-                        col2predicate[col_idx] = cell_type
+                        table_data.col2predicate[col_idx] = cell_type
                         # print(f'Cell value "{cell_val}" classified as {cell_type}')
 
-            markup.iloc[row_idx, col_idx] = cell_type
+            table_data.markup.iloc[row_idx, col_idx] = cell_type
 
 
-def detect_year(markup, row, row_idx, column_count):
+def detect_year(table_data, row, row_idx, column_count):
     numbers_in_row = 0
     previous_number = None
     for col_idx, cell in enumerate(row):
-        if markup.iloc[row_idx, col_idx] == 'Number':
+        if table_data.markup.iloc[row_idx, col_idx] == 'Number':
             numbers_in_row += 1
             if previous_number is None:
                 previous_number = round(cell)
@@ -232,7 +241,7 @@ def detect_year(markup, row, row_idx, column_count):
                 previous_number = round(cell)
             else:
                 return False
-        elif markup.iloc[row_idx, col_idx] == 'Text':
+        elif table_data.markup.iloc[row_idx, col_idx] == 'Text':
             # print(f'Text value: "{cell}"')
             pass
 
@@ -240,31 +249,30 @@ def detect_year(markup, row, row_idx, column_count):
         return False
 
     for col_idx, cell in enumerate(row):
-        if markup.iloc[row_idx, col_idx] == 'Number':
-            markup.iloc[row_idx, col_idx] = 'Year'
-            col2predicate[col_idx] = round(cell)
+        if table_data.markup.iloc[row_idx, col_idx] == 'Number':
+            table_data.markup.iloc[row_idx, col_idx] = 'Year'
+            table_data.col2predicate[col_idx] = round(cell)
     return True
 
 
-def detect_date(markup, row, row_idx):
+def detect_date(table_data, row, row_idx):
     for col_idx, cell in enumerate(row):
-        if markup.iloc[row_idx, col_idx] == 'Date':
+        if table_data.markup.iloc[row_idx, col_idx] == 'Date':
             return True
     return False
 
 
-def analyze_rows(table, markup):
-    global TARGET_TAG
-    row_count, column_count = table.shape
+def analyze_rows(table_data):
+    row_count, column_count = table_data.table.shape
     has_year = False
     has_date = False
-    for row_idx, row in table.iterrows():
-        if detect_year(markup, row, row_idx, column_count):
+    for row_idx, row in table_data.table.iterrows():
+        if detect_year(table_data, row, row_idx, column_count):
             has_year = True
-        if detect_date(markup, row, row_idx):
+        if detect_date(table_data, row, row_idx):
             has_date = True
     if not (has_year or has_date):
-        TARGET_TAG = None
+        table_data.target_tag = None
 
 
 def find_best_property(property_list, tag, max_dist=0.3):
@@ -310,29 +318,29 @@ def find_class_match(tag):
     return find_best_property(class_names, f'{tag}')
 
 
-def write_table_to_ontology(table, markup):
-    for col_idx, column in enumerate(table):
-        if col_idx not in col2predicate:
+def write_table_to_ontology(table_data):
+    for col_idx, column in enumerate(table_data.table):
+        if col_idx not in table_data.col2predicate:
             continue
-        if 'Observation_Post' == col2predicate[col_idx]:
+        if 'Observation_Post' == table_data.col2predicate[col_idx]:
             continue
-        for row_idx, cell_val in enumerate(table[column]):
-            if row_idx not in row2object:
+        for row_idx, cell_val in enumerate(table_data.table[column]):
+            if row_idx not in table_data.row2object:
                 continue
-            if markup.iloc[row_idx, col_idx] == 'Date':
+            if table_data.markup.iloc[row_idx, col_idx] == 'Date':
                 continue
             # try:
-            value = table.iloc[row_idx, col_idx]
+            value = table_data.table.iloc[row_idx, col_idx]
             # except Exception:
             #     value = table.iloc[row_idx, col_idx]
 
             if value is None:
                 continue
 
-            individual = row2object[row_idx]
+            individual = table_data.row2object[row_idx]
 
-            if TARGET_TAG:
-                year = col2predicate[col_idx]
+            if table_data.target_tag:
+                year = table_data.col2predicate[col_idx]
                 try:
                     float(year)
                 except Exception:
@@ -342,12 +350,12 @@ def write_table_to_ontology(table, markup):
                 except Exception:
                     continue
 
-                data_property_name = find_data_property_match(TARGET_TAG, individual=individual)
-                object_property_name = find_object_property_match(TARGET_TAG, individual=individual)
+                data_property_name = find_data_property_match(table_data.target_tag, individual=individual)
+                object_property_name = find_object_property_match(table_data.target_tag, individual=individual)
 
                 if data_property_name is None and object_property_name is None:
-                    if TARGET_TAG not in IGNORED_TAGS:
-                        print(f'    Property "{TARGET_TAG}" of "{individual.name}" was not found')
+                    if table_data.target_tag not in IGNORED_TAGS:
+                        print(f'    Property "{table_data.target_tag}" of "{individual.name}" was not found')
                 else:
                     if data_property_name:
                         prop_range = name2data_property[data_property_name].range
@@ -362,7 +370,7 @@ def write_table_to_ontology(table, markup):
                                     val_modified_type = val_type(value)
                                     value = val_modified_type
                                     set_property(individual, data_property_name, value, year=year)
-                                    markup.iloc[row_idx, col_idx] = f'{year}_{value}'
+                                    table_data.markup.iloc[row_idx, col_idx] = f'{year}_{value}'
                                 except Exception:
                                     print(f'    Unable to cast value "{value}" to type {val_type} for data property {data_property_name}')
                             else:
@@ -378,33 +386,21 @@ def write_table_to_ontology(table, markup):
                                 try:
                                     if type(individual) is onto.Observation_Post and object_property_name in ['Water_Consumption', 'Water_Level']:
                                         row_date = None
-                                        if row_idx in row2date:
-                                            row_date = row2date[row_idx]
+                                        if row_idx in table_data.row2date:
+                                            row_date = table_data.row2date[row_idx]
                                         set_property(individual, object_property_name, value, date=row_date)
-                                        markup.iloc[row_idx, col_idx] = f'Date_{value}'
+                                        table_data.markup.iloc[row_idx, col_idx] = f'Date_{value}'
                                     else:
                                         set_property(individual, object_property_name, value, year=year)
-                                        markup.iloc[row_idx, col_idx] = f'{year}_{value}'
+                                        table_data.markup.iloc[row_idx, col_idx] = f'{year}_{value}'
                                 except Exception:
                                     print(f'    Unable to cast value "{value}" to type {val_type} for object property {object_property_name}')
                             else:
                                 raise ValueError(f'    prop_range has length {len(prop_range)} - {prop_range}')
 
                         # raise NotImplementedError('object_property_name handling not implemented')
-
-                # if individual.__getattr__(TARGET_TAG) is None:
-                #     try:
-                #         individual.__setattr__(TARGET_TAG, [f'{year}_{value}'])
-                #     except Exception:
-                #         individual.__setattr__(TARGET_TAG, f'{year}_{value}')
-                # else:
-                #     try:
-                #         individual.__getattr__(TARGET_TAG).append(f'{year}_{value}')
-                #     except Exception:
-                #         str_prop = individual.__getattr__(TARGET_TAG)
-                #         individual.__setattr__(TARGET_TAG, str_prop + f'{year}_{value}|')
             else:
-                tag = col2predicate[col_idx]
+                tag = table_data.col2predicate[col_idx]
                 # print(f'Property {tag}, '
                 #       f'Val {value}, '
                 #       f'Individual: {individual}')
@@ -433,18 +429,18 @@ def write_table_to_ontology(table, markup):
                                     val_modified_type = val_type(value)
                                     value = val_modified_type
                                     set_property(individual, data_property_name, value)
-                                    markup.iloc[row_idx, col_idx] = f'{value}'
+                                    table_data.markup.iloc[row_idx, col_idx] = f'{value}'
                                 except Exception:
                                     print(f'    Unable to cast value "{value}" to type {val_type}')
                             else:
                                 raise ValueError(f'    prop_range has length {len(prop_range)} - {data_property_name}')
                         else:
                             set_property(individual, data_property_name, value)
-                            markup.iloc[row_idx, col_idx] = f'{value}'
+                            table_data.markup.iloc[row_idx, col_idx] = f'{value}'
                     elif object_property_name:
                         value = value.replace(',', '|').replace('/', '|')
                         values = value.split('|')
-                        markup.iloc[row_idx, col_idx] = f'{value}'
+                        table_data.markup.iloc[row_idx, col_idx] = f'{value}'
                         for splitted_value in values:
                             splitted_value_clean = splitted_value.lower().strip()
 
@@ -470,29 +466,72 @@ def write_table_to_ontology(table, markup):
                                       f'property "{object_property_name}" for {individual.name} was not found')
 
 
-def analyze_excel(table, excel_out):
-    columns = list(table.columns)
-    row_count, column_count = table.shape
+def analyze_file(input_file, output_folder):
+    print(f'Handling: {input_file}')
+    if os.path.splitext(input_file)[1] == '.xlsx':
+        for table_data in get_table_from_excel(input_file):
+            print(table_data)
+            print(f'Sheet: {table_data.sheet_name} handling started')
+            analyze_table(table_data)
+            markup_save_path = os.path.join(output_folder, table_data.sheet_name + '.xlsx')
+            table_data.markup.to_excel(markup_save_path, columns=table_data.table.columns)
+            print(f'Saved marked up table into {markup_save_path}')
 
-    table.replace({np.nan: None}, inplace=True)
-
-    markup = pd.DataFrame('', index=np.arange(row_count), columns=columns)
-
-    analyze_cells(table, markup)
-    analyze_rows(table, markup)
-    table.columns = columns
-
-    # if TARGET_TAG
-
-    write_table_to_ontology(table, markup)
-
-    markup.to_excel(excel_out, columns=columns)
-    print(f'Saved marked up table into {excel_out}')
+            print(f'Sheet {table_data.sheet_name} handling ended.\n')
+    else:
+        raise ValueError(f'Unsupported file format: {os.path.splitext(input_file)[1]}')
 
 
-def load_ontology():
+def get_table_from_excel(input_excel_file):
+    with pd.ExcelFile(input_excel_file) as excel_file:
+        for sheet_name in excel_file.sheet_names:
+            target_tag = sheet_name.replace('_KZ', '')
+            if 'GBD_Water_Consumption' in input_excel_file:
+                target_tag = 'Water_Consumption'
+            elif 'GBD_Water_Level_IBB' in input_excel_file:
+                target_tag = 'Water_Level'
+            table = excel_file.parse(sheet_name)
+            column_names = []
+            has_useful_names = False
+            for name in table.columns:
+                if 'Unnamed' in name:
+                    column_names.append('')
+                else:
+                    column_names.append(name)
+                    has_useful_names = True
+
+            if has_useful_names:
+                table.loc[-1] = column_names
+                table.index = table.index + 1
+                table.sort_index(inplace=True)
+
+            table_data = TableData()
+            table_data.target_tag = target_tag
+            table_data.table = table
+            table_data.sheet_name = sheet_name
+
+            yield table_data
+
+            # markup = analyze_table(table)
+
+
+def analyze_table(table_data):
+    columns = list(table_data.table.columns)
+    row_count, _ = table_data.table.shape
+
+    table_data.table.replace({np.nan: None}, inplace=True)
+
+    table_data.markup = pd.DataFrame('', index=np.arange(row_count), columns=columns)
+
+    analyze_cells(table_data)
+    analyze_rows(table_data)
+
+    write_table_to_ontology(table_data)
+
+
+def load_ontology(ontology_path):
     global onto
-    onto = get_ontology(ONTOLOGY_PATH)
+    onto = get_ontology(ontology_path)
     onto.load()
 
     print('onto.individuals()', len(list(onto.individuals())))
@@ -544,16 +583,11 @@ def load_terms():
 
 
 def main():
-    global name2object
-    global row2object
-    global col2predicate
-    global TARGET_TAG
-    global ONTOLOGY_PATH
     ONTOLOGY_PATH = "ontologies/Kaz_Water_Ontology_modified_fixed.owl"
     # ONTOLOGY_PATH = "ontologies/Kaz_Water_Ontology_modified_fixed_new.owl"
 
     # load_terms()
-    load_ontology()
+    load_ontology(ONTOLOGY_PATH)
 
     # onto.save(ONTOLOGY_PATH.replace('.owl', '_fixed.owl'))
 
@@ -586,42 +620,9 @@ def main():
         print(files)
 
         for file_idx, excel_file_path in enumerate(files):
+            print(f'File {file_idx + 1}/{len(files)}')
             input_excel_file = os.path.join(TABLES_PATH, excel_file_path)
-            output_excel_file = os.path.join(PROCESSED_PATH, excel_file_path)
-
-            print(f'File {file_idx+1}/{len(files)}')
-            with pd.ExcelFile(input_excel_file) as excel_file:
-                for sheet_name in excel_file.sheet_names:
-                    print(f'Sheet: {sheet_name} handling started')
-                    TARGET_TAG = sheet_name.replace('_KZ', '')
-                    if 'GBD_Water_Consumption' in input_excel_file:
-                        TARGET_TAG = 'Water_Consumption'
-                    elif 'GBD_Water_Level_IBB' in input_excel_file:
-                        TARGET_TAG = 'Water_Level'
-                    table = excel_file.parse(sheet_name)
-                    column_names = []
-                    has_useful_names = False
-                    for name in table.columns:
-                        if 'Unnamed' in name:
-                            column_names.append('')
-                        else:
-                            column_names.append(name)
-                            has_useful_names = True
-
-                    if has_useful_names:
-                        table.loc[-1] = column_names
-                        table.index = table.index + 1
-                        table.sort_index(inplace=True)
-
-
-                    row2object = {}
-                    col2predicate = {}
-
-
-                    analyze_excel(table, output_excel_file.replace('.xlsx', '_') + sheet_name + '.xlsx')
-
-                    print(f'Sheet {sheet_name} handling ended.\n')
-            # break
+            analyze_file(input_excel_file, PROCESSED_PATH)
 
     onto.save(ONTOLOGY_PATH.replace('.owl', '_new.owl'))
 
