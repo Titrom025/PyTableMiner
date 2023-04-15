@@ -13,15 +13,19 @@ from Levenshtein import distance as levenshtein_distance
 
 IGNORED_TAGS = ["Urban_Basins_Population", "Rural_Basins_Population"]
 
-onto = None
-object_names = []
-data_properties = []
-object_properties = []
-class_names = []
+ontology_data = None
 
-name2data_property = {}
-name2object_property = {}
-name2object = {}
+class OntologyData:
+    def __init__(self):
+        self.ontology = None
+        self.object_names = []
+        self.data_properties = []
+        self.object_properties = []
+        self.class_names = []
+
+        self.name2data_property = {}
+        self.name2object_property = {}
+        self.name2object = {}
 
 
 class TableData:
@@ -114,12 +118,12 @@ def cast_to_number(value):
 def set_property(subject, predicate, object, year=None, date=None):
     try:
         if date is not None:
-            timestamp = onto.Timestamp(f'~{subject.name}_'
+            timestamp = ontology_data.ontology.Timestamp(f'~{subject.name}_'
                                        f'{predicate}_'
                                        f'{date.year}_'
                                        f'{date.month}_'
                                        f'{date.day}',
-                                       namespace=onto,
+                                       namespace=ontology_data.ontology,
                                        Timestamp_Year=int(date.year),
                                        Timestamp_Month=int(date.month),
                                        Timestamp_Day=int(date.day),
@@ -135,11 +139,11 @@ def set_property(subject, predicate, object, year=None, date=None):
                 else:
                     subject.__getattr__(predicate).append(object)
             else:
-                timestamp = onto.Timestamp(f'~year_{year}_'
+                timestamp = ontology_data.ontology.Timestamp(f'~year_{year}_'
                                            f'{subject.name}_'
                                            f'{predicate}_'
                                            f'{object}',
-                                           namespace=onto,
+                                           namespace=ontology_data.ontology,
                                            Timestamp_Year=year,
                                            Timestamp_Value=object)
                 if subject.__getattr__(predicate) is None:
@@ -188,22 +192,22 @@ def analyze_cells(table_data):
                         post_name = f'Post_{cell_val_lower}'
                         post_object = find_object_match(post_name, max_dist=0)
                         if post_object is None:
-                            created_post = onto.Observation_Post(post_name)
-                            name2object[created_post.name.lower()] = {
+                            created_post = ontology_data.ontology.Observation_Post(post_name)
+                            ontology_data.name2object[created_post.name.lower()] = {
                                 "individual": created_post,
                                 "is_instance_of": "|"
                             }
-                            object_names.append(created_post.name.lower())
+                            ontology_data.object_names.append(created_post.name.lower())
                         else:
                             post_name = post_object
                         if row_idx not in table_data.row2object:
-                            cell_type = name2object[post_name.lower()]['individual'].name
-                            table_data.row2object[row_idx] = name2object[post_name.lower()]['individual']
+                            cell_type = ontology_data.name2object[post_name.lower()]['individual'].name
+                            table_data.row2object[row_idx] = ontology_data.name2object[post_name.lower()]['individual']
                     elif founded_object is not None:
                         if row_idx not in table_data.row2object:
                             if class_column_idx == col_idx or class_column_idx == -1:
-                                cell_type = name2object[founded_object]['individual'].name
-                                table_data.row2object[row_idx] = name2object[founded_object]['individual']
+                                cell_type = ontology_data.name2object[founded_object]['individual'].name
+                                table_data.row2object[row_idx] = ontology_data.name2object[founded_object]['individual']
 
                     cell_type_candidate = find_data_property_match(cell_val)
                     if cell_type_candidate is None:
@@ -213,7 +217,7 @@ def analyze_cells(table_data):
                     if cell_type_candidate is None:
                         cell_type_candidate = tag2property.get(cell_val, None)
 
-                    if class_column_idx == -1 and cell_type_candidate in class_names:
+                    if class_column_idx == -1 and cell_type_candidate in ontology_data.class_names:
                         cell_type = f'Class_{cell_type_candidate}'
                         class_column_idx = col_idx
                         # col2tag[col_idx] = cell_type
@@ -294,28 +298,28 @@ def find_data_property_match(tag, individual=None, max_dist=0.3):
     specific_class_tag = None
     if individual is not None:
         class_name = individual.is_a[0].name
-        specific_class_tag = find_best_property(data_properties, f'{class_name}_{tag}')
-    return specific_class_tag if specific_class_tag else find_best_property(data_properties, f'{tag}', max_dist)
+        specific_class_tag = find_best_property(ontology_data.data_properties, f'{class_name}_{tag}')
+    return specific_class_tag if specific_class_tag else find_best_property(ontology_data.data_properties, f'{tag}', max_dist)
 
 
 def find_object_property_match(tag, individual=None, max_dist=0.3):
     specific_class_tag = None
     if individual is not None:
         class_name = individual.is_a[0].name
-        specific_class_tag = find_best_property(object_properties, f'{class_name}_{tag}')
-    return specific_class_tag if specific_class_tag else find_best_property(object_properties, f'{tag}', max_dist)
+        specific_class_tag = find_best_property(ontology_data.object_properties, f'{class_name}_{tag}')
+    return specific_class_tag if specific_class_tag else find_best_property(ontology_data.object_properties, f'{tag}', max_dist)
 
 
 def find_object_match(tag, property_name=None, max_dist=0.3):
     specific_class_tag = None
     if property_name is not None and property_name in property2class:
         property_class = property2class[property_name].lower()
-        specific_class_tag = find_best_property(object_names, f'{tag}_{property_class}')
-    return specific_class_tag if specific_class_tag else find_best_property(object_names, f'{tag}', max_dist)
+        specific_class_tag = find_best_property(ontology_data.object_names, f'{tag}_{property_class}')
+    return specific_class_tag if specific_class_tag else find_best_property(ontology_data.object_names, f'{tag}', max_dist)
 
 
 def find_class_match(tag):
-    return find_best_property(class_names, f'{tag}')
+    return find_best_property(ontology_data.class_names, f'{tag}')
 
 
 def write_table_to_ontology(table_data):
@@ -358,7 +362,7 @@ def write_table_to_ontology(table_data):
                         print(f'    Property "{table_data.target_tag}" of "{individual.name}" was not found')
                 else:
                     if data_property_name:
-                        prop_range = name2data_property[data_property_name].range
+                        prop_range = ontology_data.name2data_property[data_property_name].range
                         if prop_range is not None:
                             if len(prop_range) == 1:
                                 val_type = prop_range[0]
@@ -379,12 +383,12 @@ def write_table_to_ontology(table_data):
                             # set_property(individual, data_property_name, value)
                             raise ValueError(f'    Property not set')
                     elif object_property_name:
-                        prop_range = name2object_property[object_property_name].range
+                        prop_range = ontology_data.name2object_property[object_property_name].range
                         if prop_range is not None:
                             if len(prop_range) == 1:
                                 val_type = prop_range[0]
                                 try:
-                                    if type(individual) is onto.Observation_Post and object_property_name in ['Water_Consumption', 'Water_Level']:
+                                    if type(individual) is ontology_data.ontology.Observation_Post and object_property_name in ['Water_Consumption', 'Water_Level']:
                                         row_date = None
                                         if row_idx in table_data.row2date:
                                             row_date = table_data.row2date[row_idx]
@@ -415,7 +419,7 @@ def write_table_to_ontology(table_data):
                         print(f'    Property "{tag}" of "{individual.name}" was not found')
                 else:
                     if data_property_name:
-                        prop_range = name2data_property[data_property_name].range
+                        prop_range = ontology_data.name2data_property[data_property_name].range
                         if prop_range is not None:
                             if len(prop_range) == 1:
                                 val_type = prop_range[0]
@@ -446,13 +450,13 @@ def write_table_to_ontology(table_data):
 
                             founded_object = find_object_match(splitted_value_clean, object_property_name)
                             if founded_object:
-                                second_object = name2object[founded_object]
+                                second_object = ontology_data.name2object[founded_object]
                                 second_object_ind = second_object['individual']
                                 set_property(individual, object_property_name, second_object_ind)
                                 # print(f'{individual.name} property: {object_property_name}, {second_object_ind.name}')
 
                                 # TODO: Fix support for inverse properties
-                                # inverse_property = name2object_property[object_property_name].inverse_property
+                                # inverse_property = ontology_data.name2object_property[object_property_name].inverse_property
                                 inverse_property = inverse_property_map.get(object_property_name, None)
 
                                 if inverse_property is not None:
@@ -470,7 +474,6 @@ def analyze_file(input_file, output_folder):
     print(f'Handling: {input_file}')
     if os.path.splitext(input_file)[1] == '.xlsx':
         for table_data in get_table_from_excel(input_file):
-            print(table_data)
             print(f'Sheet: {table_data.sheet_name} handling started')
             analyze_table(table_data)
             markup_save_path = os.path.join(output_folder, table_data.sheet_name + '.xlsx')
@@ -512,8 +515,6 @@ def get_table_from_excel(input_excel_file):
 
             yield table_data
 
-            # markup = analyze_table(table)
-
 
 def analyze_table(table_data):
     columns = list(table_data.table.columns)
@@ -530,12 +531,13 @@ def analyze_table(table_data):
 
 
 def load_ontology(ontology_path):
-    global onto
-    onto = get_ontology(ontology_path)
-    onto.load()
+    global ontology_data
+    ontology_data = OntologyData()
+    ontology_data.ontology = get_ontology(ontology_path)
+    ontology_data.ontology.load()
 
-    print('onto.individuals()', len(list(onto.individuals())))
-    for individual in onto.individuals():
+    print('ontology_data.ontology.individuals()', len(list(ontology_data.ontology.individuals())))
+    for individual in ontology_data.ontology.individuals():
         object_name = individual.name.lower()
         if object_name[0] == '~':
             continue
@@ -546,26 +548,25 @@ def load_ontology(ontology_path):
             except Exception:
                 pass
 
-        # print(individual.is_instance_of, individual.name)
-        name2object[object_name] = {
+        ontology_data.name2object[object_name] = {
             "individual": individual,
             "is_instance_of": "|".join(is_instance_of_str)
         }
-        object_names.append(object_name)
+        ontology_data.object_names.append(object_name)
 
-    print('onto.object_properties()', len(list(onto.object_properties())))
-    for prop in onto.object_properties():
-        object_properties.append(prop.name)
-        name2object_property[prop.name] = prop
+    print('ontology_data.ontology.object_properties()', len(list(ontology_data.ontology.object_properties())))
+    for prop in ontology_data.ontology.object_properties():
+        ontology_data.object_properties.append(prop.name)
+        ontology_data.name2object_property[prop.name] = prop
 
-    print('onto.properties()', len(list(onto.properties())))
-    for prop in onto.data_properties():
-        data_properties.append(prop.name)
-        name2data_property[prop.name] = prop
+    print('ontology_data.ontology.properties()', len(list(ontology_data.ontology.properties())))
+    for prop in ontology_data.ontology.data_properties():
+        ontology_data.data_properties.append(prop.name)
+        ontology_data.name2data_property[prop.name] = prop
 
-    print('onto.classes()', len(list(onto.classes())))
-    for cls in onto.classes():
-        class_names.append(cls.name)
+    print('ontology_data.ontology.classes()', len(list(ontology_data.ontology.classes())))
+    for cls in ontology_data.ontology.classes():
+        ontology_data.class_names.append(cls.name)
 
 
 def load_terms():
@@ -589,7 +590,7 @@ def main():
     # load_terms()
     load_ontology(ONTOLOGY_PATH)
 
-    # onto.save(ONTOLOGY_PATH.replace('.owl', '_fixed.owl'))
+    # ontology_data.ontology.save(ONTOLOGY_PATH.replace('.owl', '_fixed.owl'))
 
 
     # return
@@ -624,7 +625,7 @@ def main():
             input_excel_file = os.path.join(TABLES_PATH, excel_file_path)
             analyze_file(input_excel_file, PROCESSED_PATH)
 
-    onto.save(ONTOLOGY_PATH.replace('.owl', '_new.owl'))
+    ontology_data.ontology.save(ONTOLOGY_PATH.replace('.owl', '_new.owl'))
 
 
 if __name__ == '__main__':
