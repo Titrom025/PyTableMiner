@@ -5,3 +5,4 @@ from utils.transforms import cast_to_number
 from utils.matchers import find_best_property, \
     find_data_property_match, find_object_property_match, \
     find_class_match, find_object_match
+from utils.ontology import export_data_to_ontology, load_ontology

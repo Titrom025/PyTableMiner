@@ -1,17 +1,12 @@
-import csv
-import os
-import time
 import numpy as np
 import pandas as pd
-import requests
 
-from nltk.stem import snowball
 from owlready2 import *
 
-from ontology_utils import export_data_to_ontology, load_ontology
-from utils import OntologyData, TableData, cast_to_number, \
+from utils import cast_to_number, \
     find_data_property_match, find_object_property_match,\
-    find_object_match, find_class_match, find_best_property
+    find_object_match, find_class_match, \
+    export_data_to_ontology, load_ontology
 from parsers import get_tables_from_excel
 
 ontology_data = None
