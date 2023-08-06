@@ -1,0 +1,1478 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+         xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+         xmlns:owl="http://www.w3.org/2002/07/owl#"
+         xml:base="http://www.semanticweb.org/асель/ontologies/2023/1/water_resources"
+         xmlns="http://www.semanticweb.org/асель/ontologies/2023/1/water_resources#">
+
+<owl:Ontology rdf:about="http://www.semanticweb.org/асель/ontologies/2023/1/water_resources"/>
+
+<owl:ObjectProperty rdf:about="#Basin_has_River"/>
+
+<owl:ObjectProperty rdf:about="#Contains"/>
+
+<owl:ObjectProperty rdf:about="#Female_Population">
+  <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+  <rdfs:domain rdf:resource="#Regions_KZ"/>
+  <rdfs:range rdf:resource="#Timestamp"/>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#Located_in"/>
+
+<owl:ObjectProperty rdf:about="#Male_Population">
+  <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+  <rdfs:domain rdf:resource="#Regions_KZ"/>
+  <rdfs:range rdf:resource="#Timestamp"/>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#Population">
+  <rdfs:domain rdf:resource="#Regions_KZ"/>
+  <rdfs:range rdf:resource="#Timestamp"/>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#River_in_Basin"/>
+
+<owl:ObjectProperty rdf:about="#Rural_Female_Population">
+  <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+  <rdfs:domain rdf:resource="#Regions_KZ"/>
+  <rdfs:range rdf:resource="#Timestamp"/>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#Rural_Male_Population">
+  <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+  <rdfs:domain rdf:resource="#Regions_KZ"/>
+  <rdfs:range rdf:resource="#Timestamp"/>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#Rural_Population">
+  <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+  <rdfs:domain rdf:resource="#Regions_KZ"/>
+  <rdfs:range rdf:resource="#Timestamp"/>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#Urban_Female_Population">
+  <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+  <rdfs:domain rdf:resource="#Regions_KZ"/>
+  <rdfs:range rdf:resource="#Timestamp"/>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#Urban_Male_Population">
+  <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+  <rdfs:domain rdf:resource="#Regions_KZ"/>
+  <rdfs:range rdf:resource="#Timestamp"/>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#Urban_Population">
+  <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+  <rdfs:domain rdf:resource="#Regions_KZ"/>
+  <rdfs:range rdf:resource="#Timestamp"/>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#Water_Consumption">
+  <rdfs:domain rdf:resource="#Observation_Post"/>
+  <rdfs:range rdf:resource="#Timestamp"/>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#Water_Level">
+  <rdfs:domain rdf:resource="#Observation_Post"/>
+  <rdfs:range rdf:resource="#Timestamp"/>
+</owl:ObjectProperty>
+
+<owl:DatatypeProperty rdf:about="#Average_annual_water_consumption">
+  <rdfs:domain rdf:resource="#River"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+  <rdfs:comment>m3/s</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Basin_Square">
+  <rdfs:domain rdf:resource="#Basin"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Basins_Population">
+  <rdfs:domain rdf:resource="#Basin"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Circ_Sys_Diseases">
+  <rdfs:domain rdf:resource="#City_KZ"/>
+  <rdfs:domain rdf:resource="#Regions_KZ"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Domestic_Drinking_Water_Use">
+  <rdfs:domain rdf:resource="#Water_Class"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Domestic_Water_Use">
+  <rdfs:domain rdf:resource="#Water_Class"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Floods_rain_floods">
+  <rdfs:domain rdf:resource="#Surface_water_resource"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Hazard_index">
+  <rdfs:domain rdf:resource="#Chemical_substance_in_water"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Hydrological_Posts">
+  <rdfs:domain rdf:resource="#Surface_water_resource"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Ice_thickness">
+  <rdfs:domain rdf:resource="#Surface_water_resource"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Incidence">
+  <rdfs:domain rdf:resource="#Basin"/>
+  <rdfs:domain rdf:resource="#Regions_KZ"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Indicator_type">
+  <rdfs:domain rdf:resource="#Chemical_substance_in_water"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Industrial_companies">
+  <rdfs:domain rdf:resource="#Regions_KZ"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Inorganic_substances_cations">
+  <rdfs:domain rdf:resource="#Water_Hygiene_Standards"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Lake_Square">
+  <rdfs:domain rdf:resource="#Lake"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Latitude">
+  <rdfs:domain rdf:resource="#Basin"/>
+  <rdfs:domain rdf:resource="#Lake"/>
+  <rdfs:domain rdf:resource="#Regions_KZ"/>
+  <rdfs:domain rdf:resource="#River"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#token"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Location_coordinates">
+  <rdfs:domain rdf:resource="#Regions_KZ"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Longitude">
+  <rdfs:domain rdf:resource="#Basin"/>
+  <rdfs:domain rdf:resource="#Lake"/>
+  <rdfs:domain rdf:resource="#Regions_KZ"/>
+  <rdfs:domain rdf:resource="#River"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#token"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Max_permissible_concentrations"/>
+
+<owl:DatatypeProperty rdf:about="#Mortality_birth_rate">
+  <rdfs:domain rdf:resource="#Regions_KZ"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Oil_Products">
+  <rdfs:domain rdf:resource="#Water_Hygiene_Standards"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Organic_substances">
+  <rdfs:domain rdf:resource="#Water_Hygiene_Standards"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Region_Square">
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#River_Fall">
+  <rdfs:domain rdf:resource="#River"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#River_Length">
+  <rdfs:domain rdf:resource="#River"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#long"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#River_Length_in_Basin">
+  <rdfs:domain rdf:resource="#Basin"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#River_Length_in_KZ">
+  <rdfs:domain rdf:resource="#River"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Snow_height">
+  <rdfs:domain rdf:resource="#Surface_water_resource"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Surfactants_SAS">
+  <rdfs:domain rdf:resource="#Water_Hygiene_Standards"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Time">
+  <rdfs:domain rdf:resource="#Timestamp"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Timestamp_Day">
+  <rdfs:subPropertyOf rdf:resource="#Time"/>
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+  <rdfs:domain rdf:resource="#Timestamp"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Timestamp_Month">
+  <rdfs:subPropertyOf rdf:resource="#Time"/>
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+  <rdfs:domain rdf:resource="#Timestamp"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Timestamp_Value">
+  <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+  <rdfs:domain rdf:resource="#Timestamp"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Timestamp_Year">
+  <rdfs:subPropertyOf rdf:resource="#Time"/>
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+  <rdfs:domain rdf:resource="#Timestamp"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#WPI">
+  <rdfs:domain rdf:resource="#Lake"/>
+  <rdfs:domain rdf:resource="#River"/>
+  <rdfs:domain rdf:resource="#Water_Class"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
+  <rdfs:comment>Water pollution index</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#WaterQualityCharacteristic">
+  <rdfs:domain rdf:resource="#Water_Class"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Water_and_energy_resources_Energy">
+  <rdfs:domain rdf:resource="#River"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Water_and_energy_resources_Power">
+  <rdfs:domain rdf:resource="#River"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Water_resources_KZ">
+  <rdfs:domain rdf:resource="#Basin"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+  <rdfs:comment> (cubic meter)</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Water_temperature">
+  <rdfs:domain rdf:resource="#Surface_water_resource"/>
+</owl:DatatypeProperty>
+
+<owl:Class rdf:about="#Regions_KZ"/>
+
+<owl:Class rdf:about="#Timestamp"/>
+
+<owl:Class rdf:about="#Observation_Post"/>
+
+<owl:Class rdf:about="#River">
+  <rdfs:subClassOf rdf:resource="#Water_Objects"/>
+</owl:Class>
+
+<owl:Class rdf:about="#Basin">
+  <rdfs:subClassOf rdf:resource="#Water_Objects"/>
+</owl:Class>
+
+<owl:Class rdf:about="#City_KZ">
+  <rdfs:subClassOf rdf:resource="#Regions_KZ"/>
+</owl:Class>
+
+<owl:Class rdf:about="#Water_Class"/>
+
+<owl:Class rdf:about="#Surface_water_resource">
+  <rdfs:subClassOf rdf:resource="#Sensor_Observation"/>
+</owl:Class>
+
+<owl:Class rdf:about="#Chemical_substance_in_water">
+  <rdfs:subClassOf rdf:resource="#Water_Hygiene_Standards"/>
+</owl:Class>
+
+<owl:Class rdf:about="#Water_Hygiene_Standards"/>
+
+<owl:Class rdf:about="#Lake">
+  <rdfs:subClassOf rdf:resource="#Water_Objects"/>
+</owl:Class>
+
+<owl:Class rdf:about="#Water_Objects"/>
+
+<owl:Class rdf:about="#Sensor_Observation"/>
+
+<owl:Class rdf:about="#Water_Class_1">
+  <owl:equivalentClass>
+    <owl:Class>
+      <owl:intersectionOf rdf:parseType="Collection">
+        <rdf:Description rdf:about="#Water_Class"/>
+        <owl:Restriction>
+          <owl:onProperty rdf:resource="#WPI"/>
+          <owl:someValuesFrom>
+            <rdfs:Datatype>
+              <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
+              <owl:withRestrictions>
+                <rdf:Description>
+                  <rdf:first>
+                    <rdf:Description>
+                      <xsd:minInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</xsd:minInclusive>
+                    </rdf:Description>
+                  </rdf:first>
+                  <rdf:rest>
+                    <rdf:Description>
+                      <rdf:first>
+                        <rdf:Description>
+                          <xsd:maxExclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.3</xsd:maxExclusive>
+                        </rdf:Description>
+                      </rdf:first>
+                      <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                    </rdf:Description>
+                  </rdf:rest>
+                </rdf:Description>
+              </owl:withRestrictions>
+            </rdfs:Datatype>
+          </owl:someValuesFrom>
+        </owl:Restriction>
+      </owl:intersectionOf>
+    </owl:Class>
+  </owl:equivalentClass>
+  <rdfs:subClassOf rdf:resource="#Water_Class"/>
+</owl:Class>
+
+<owl:Class rdf:about="#Water_Class_2">
+  <owl:equivalentClass>
+    <owl:Class>
+      <owl:intersectionOf rdf:parseType="Collection">
+        <rdf:Description rdf:about="#Water_Class"/>
+        <owl:Restriction>
+          <owl:onProperty rdf:resource="#WPI"/>
+          <owl:someValuesFrom>
+            <rdfs:Datatype>
+              <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
+              <owl:withRestrictions>
+                <rdf:Description>
+                  <rdf:first>
+                    <rdf:Description>
+                      <xsd:minInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.3</xsd:minInclusive>
+                    </rdf:Description>
+                  </rdf:first>
+                  <rdf:rest>
+                    <rdf:Description>
+                      <rdf:first>
+                        <rdf:Description>
+                          <xsd:maxExclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</xsd:maxExclusive>
+                        </rdf:Description>
+                      </rdf:first>
+                      <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                    </rdf:Description>
+                  </rdf:rest>
+                </rdf:Description>
+              </owl:withRestrictions>
+            </rdfs:Datatype>
+          </owl:someValuesFrom>
+        </owl:Restriction>
+      </owl:intersectionOf>
+    </owl:Class>
+  </owl:equivalentClass>
+  <rdfs:subClassOf rdf:resource="#Water_Class"/>
+</owl:Class>
+
+<owl:Class rdf:about="#Water_Class_3">
+  <owl:equivalentClass>
+    <owl:Class>
+      <owl:intersectionOf rdf:parseType="Collection">
+        <rdf:Description rdf:about="#Water_Class"/>
+        <owl:Restriction>
+          <owl:onProperty rdf:resource="#WPI"/>
+          <owl:someValuesFrom>
+            <rdfs:Datatype>
+              <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
+              <owl:withRestrictions>
+                <rdf:Description>
+                  <rdf:first>
+                    <rdf:Description>
+                      <xsd:minInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</xsd:minInclusive>
+                    </rdf:Description>
+                  </rdf:first>
+                  <rdf:rest>
+                    <rdf:Description>
+                      <rdf:first>
+                        <rdf:Description>
+                          <xsd:maxExclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#float">2.5</xsd:maxExclusive>
+                        </rdf:Description>
+                      </rdf:first>
+                      <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                    </rdf:Description>
+                  </rdf:rest>
+                </rdf:Description>
+              </owl:withRestrictions>
+            </rdfs:Datatype>
+          </owl:someValuesFrom>
+        </owl:Restriction>
+      </owl:intersectionOf>
+    </owl:Class>
+  </owl:equivalentClass>
+  <rdfs:subClassOf rdf:resource="#Water_Class"/>
+</owl:Class>
+
+<owl:Class rdf:about="#Water_Class_4">
+  <owl:equivalentClass>
+    <owl:Class>
+      <owl:intersectionOf rdf:parseType="Collection">
+        <rdf:Description rdf:about="#Water_Class"/>
+        <owl:Restriction>
+          <owl:onProperty rdf:resource="#WPI"/>
+          <owl:someValuesFrom>
+            <rdfs:Datatype>
+              <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
+              <owl:withRestrictions>
+                <rdf:Description>
+                  <rdf:first>
+                    <rdf:Description>
+                      <xsd:minInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#float">2.5</xsd:minInclusive>
+                    </rdf:Description>
+                  </rdf:first>
+                  <rdf:rest>
+                    <rdf:Description>
+                      <rdf:first>
+                        <rdf:Description>
+                          <xsd:maxExclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#float">4.0</xsd:maxExclusive>
+                        </rdf:Description>
+                      </rdf:first>
+                      <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                    </rdf:Description>
+                  </rdf:rest>
+                </rdf:Description>
+              </owl:withRestrictions>
+            </rdfs:Datatype>
+          </owl:someValuesFrom>
+        </owl:Restriction>
+      </owl:intersectionOf>
+    </owl:Class>
+  </owl:equivalentClass>
+  <rdfs:subClassOf rdf:resource="#Water_Class"/>
+</owl:Class>
+
+<owl:Class rdf:about="#Water_Class_5">
+  <owl:equivalentClass>
+    <owl:Class>
+      <owl:intersectionOf rdf:parseType="Collection">
+        <rdf:Description rdf:about="#Water_Class"/>
+        <owl:Restriction>
+          <owl:onProperty rdf:resource="#WPI"/>
+          <owl:someValuesFrom>
+            <rdfs:Datatype>
+              <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
+              <owl:withRestrictions>
+                <rdf:Description>
+                  <rdf:first>
+                    <rdf:Description>
+                      <xsd:minInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#float">4.0</xsd:minInclusive>
+                    </rdf:Description>
+                  </rdf:first>
+                  <rdf:rest>
+                    <rdf:Description>
+                      <rdf:first>
+                        <rdf:Description>
+                          <xsd:maxExclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#float">6.0</xsd:maxExclusive>
+                        </rdf:Description>
+                      </rdf:first>
+                      <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                    </rdf:Description>
+                  </rdf:rest>
+                </rdf:Description>
+              </owl:withRestrictions>
+            </rdfs:Datatype>
+          </owl:someValuesFrom>
+        </owl:Restriction>
+      </owl:intersectionOf>
+    </owl:Class>
+  </owl:equivalentClass>
+  <rdfs:subClassOf rdf:resource="#Water_Class"/>
+</owl:Class>
+
+<owl:Class rdf:about="#Water_Class_6">
+  <owl:equivalentClass>
+    <owl:Class>
+      <owl:intersectionOf rdf:parseType="Collection">
+        <rdf:Description rdf:about="#Water_Class"/>
+        <owl:Restriction>
+          <owl:onProperty rdf:resource="#WPI"/>
+          <owl:someValuesFrom>
+            <rdfs:Datatype>
+              <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
+              <owl:withRestrictions>
+                <rdf:Description>
+                  <rdf:first>
+                    <rdf:Description>
+                      <xsd:minInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#float">6.0</xsd:minInclusive>
+                    </rdf:Description>
+                  </rdf:first>
+                  <rdf:rest>
+                    <rdf:Description>
+                      <rdf:first>
+                        <rdf:Description>
+                          <xsd:maxExclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#float">10.0</xsd:maxExclusive>
+                        </rdf:Description>
+                      </rdf:first>
+                      <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                    </rdf:Description>
+                  </rdf:rest>
+                </rdf:Description>
+              </owl:withRestrictions>
+            </rdfs:Datatype>
+          </owl:someValuesFrom>
+        </owl:Restriction>
+      </owl:intersectionOf>
+    </owl:Class>
+  </owl:equivalentClass>
+  <rdfs:subClassOf rdf:resource="#Water_Class"/>
+</owl:Class>
+
+<owl:Class rdf:about="#Water_Class_7">
+  <owl:equivalentClass>
+    <owl:Class>
+      <owl:intersectionOf rdf:parseType="Collection">
+        <rdf:Description rdf:about="#Water_Class"/>
+        <owl:Restriction>
+          <owl:onProperty rdf:resource="#WPI"/>
+          <owl:someValuesFrom>
+            <rdfs:Datatype>
+              <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
+              <owl:withRestrictions>
+                <rdf:Description>
+                  <rdf:first>
+                    <rdf:Description>
+                      <xsd:minInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#float">10.0</xsd:minInclusive>
+                    </rdf:Description>
+                  </rdf:first>
+                  <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                </rdf:Description>
+              </owl:withRestrictions>
+            </rdfs:Datatype>
+          </owl:someValuesFrom>
+        </owl:Restriction>
+      </owl:intersectionOf>
+    </owl:Class>
+  </owl:equivalentClass>
+  <rdfs:subClassOf rdf:resource="#Water_Class"/>
+</owl:Class>
+
+<owl:Class rdf:about="#Water_Quality">
+  <rdfs:subClassOf rdf:resource="#Sensor_Observation"/>
+</owl:Class>
+
+<River rdf:about="#Ak-Bulak">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#Kostanay_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.68</WPI>
+</River>
+
+<River rdf:about="#Akkabe">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</River>
+
+<Lake rdf:about="#Akkol">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Regions_KZ rdf:about="#Akmola_Region">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Contains rdf:resource="#Big_Chebache"/>
+  <Contains rdf:resource="#Borovoe"/>
+  <Contains rdf:resource="#Ishim"/>
+  <Contains rdf:resource="#Nura"/>
+  <Contains rdf:resource="#Shuchie"/>
+  <Contains rdf:resource="#Vyacheslavskoe"/>
+  <Circ_Sys_Diseases rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">3647.9</Circ_Sys_Diseases>
+</Regions_KZ>
+
+<River rdf:about="#Aksu">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</River>
+
+<City_KZ rdf:about="#Aktau">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</City_KZ>
+
+<City_KZ rdf:about="#Aktobe">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</City_KZ>
+
+<Regions_KZ rdf:about="#Aktobe_Region">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Contains rdf:resource="#Ilek"/>
+  <Circ_Sys_Diseases rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">2141.3</Circ_Sys_Diseases>
+</Regions_KZ>
+
+<Lake rdf:about="#Alakol">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<City_KZ rdf:about="#Almaty_City">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Contains rdf:resource="#Bolshaya_Almatinka"/>
+  <Contains rdf:resource="#Esentai"/>
+  <Contains rdf:resource="#Malaya_Almatinka"/>
+  <Circ_Sys_Diseases rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">4017.8</Circ_Sys_Diseases>
+</City_KZ>
+
+<Regions_KZ rdf:about="#Almaty_Region">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Contains rdf:resource="#Bartogay"/>
+  <Contains rdf:resource="#Ili"/>
+  <Contains rdf:resource="#Sharyn"/>
+  <Contains rdf:resource="#Bayankol"/>
+  <Contains rdf:resource="#Kapshagai"/>
+  <Contains rdf:resource="#Karkara"/>
+  <Contains rdf:resource="#Khorgos"/>
+  <Contains rdf:resource="#Shilik"/>
+  <Contains rdf:resource="#Teke"/>
+  <Contains rdf:resource="#Turgen"/>
+  <Circ_Sys_Diseases rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">2751.5</Circ_Sys_Diseases>
+</Regions_KZ>
+
+<Chemical_substance_in_water rdf:about="#Aluminum">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Chemical_substance_in_water>
+
+<Lake rdf:about="#Aral_Sea">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Basin rdf:about="#Aral_Syrdarya_Basin">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Basin>
+
+<Lake rdf:about="#Aralor">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Lake rdf:about="#Aralsor">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Lake rdf:about="#Arys_Lake">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<River rdf:about="#Arys_River">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</River>
+
+<Lake rdf:about="#Ashchikol">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<River rdf:about="#Assa">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#Zhambyl_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1.47</WPI>
+</River>
+
+<City_KZ rdf:about="#Astana">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Circ_Sys_Diseases rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">2953.7</Circ_Sys_Diseases>
+</City_KZ>
+
+<City_KZ rdf:about="#Atyrau">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</City_KZ>
+
+<Regions_KZ rdf:about="#Atyrau_Region">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Circ_Sys_Diseases rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">2156.2</Circ_Sys_Diseases>
+</Regions_KZ>
+
+<River rdf:about="#Ayagoz">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</River>
+
+<Lake rdf:about="#Ayke">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Lake rdf:about="#Azhibeksor">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<River rdf:about="#Badam">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#South_Kazakhstan_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1.6</WPI>
+</River>
+
+<Lake rdf:about="#Balkhash">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <rdf:type rdf:resource="#River"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#float">4.52</WPI>
+</Lake>
+
+<Lake rdf:about="#Bartogay">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#Almaty_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1.63</WPI>
+</Lake>
+
+<River rdf:about="#Bayankol">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#Almaty_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1.83</WPI>
+</River>
+
+<Lake rdf:about="#Big_Azhbulat">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<River rdf:about="#Big_Chebache">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#Akmola_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.66</WPI>
+</River>
+
+<River rdf:about="#Big_Ozen">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</River>
+
+<Lake rdf:about="#Biylekol">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<River rdf:about="#Bolshaya_Almatinka">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#Almaty_City"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1.34</WPI>
+</River>
+
+<Lake rdf:about="#Bolshoy_Azhbulat">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<River rdf:about="#Borovoe">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#Akmola_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.52</WPI>
+</River>
+
+<rdf:Description rdf:about="#Breksa">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#East_Kazakhstan_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">5.8</WPI>
+</rdf:Description>
+
+<rdf:Description rdf:about="#Bugun">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#South_Kazakhstan_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.35</WPI>
+</rdf:Description>
+
+<River rdf:about="#Bukhtarma">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#East_Kazakhstan_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">3.22</WPI>
+</River>
+
+<Lake rdf:about="#Caspian_Sea">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Lake rdf:about="#Chagan">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#West_Kazakhstan_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1.01</WPI>
+</Lake>
+
+<River rdf:about="#Chu">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</River>
+
+<Chemical_substance_in_water rdf:about="#Copper">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Chemical_substance_in_water>
+
+<River rdf:about="#Derkul">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#West_Kazakhstan_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.85</WPI>
+</River>
+
+<Regions_KZ rdf:about="#East_Kazakhstan_Region">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Contains rdf:resource="#Breksa"/>
+  <Contains rdf:resource="#Tikhaya"/>
+  <Contains rdf:resource="#Bukhtarma"/>
+  <Contains rdf:resource="#Glubochanka"/>
+  <Contains rdf:resource="#Irtysh"/>
+  <Contains rdf:resource="#Krasnoyarka"/>
+  <Contains rdf:resource="#Uba"/>
+  <Contains rdf:resource="#Ulba"/>
+  <Circ_Sys_Diseases rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">3231.7</Circ_Sys_Diseases>
+</Regions_KZ>
+
+<River rdf:about="#Emba">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</River>
+
+<rdf:Description rdf:about="#Esentai">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#Almaty_City"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1.61</WPI>
+</rdf:Description>
+
+<rdf:Description rdf:about="#Glubochanka">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#East_Kazakhstan_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">5.33</WPI>
+</rdf:Description>
+
+<Regions_KZ rdf:about="#Gurievskaya_Region">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Regions_KZ>
+
+<River rdf:about="#Ile">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#float">2.25</WPI>
+</River>
+
+<Basin rdf:about="#Ile_Balkhash_Basin">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Basin>
+
+<River rdf:about="#Ilek">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#Aktobe_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">3.2</WPI>
+</River>
+
+<River rdf:about="#Ili">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#Almaty_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">2.25</WPI>
+</River>
+
+<Lake rdf:about="#Indder">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<River rdf:about="#Irgiz">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</River>
+
+<River rdf:about="#Irtysh">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <rdf:type rdf:resource="#Water_Class"/>
+  <Located_in rdf:resource="#East_Kazakhstan_Region"/>
+  <Located_in rdf:resource="#Pavlodar_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.81</WPI>
+</River>
+
+<Basin rdf:about="#Irtysh_Basin">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Basin>
+
+<River rdf:about="#Ishim">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#North_Kazakhstan_Region"/>
+  <Located_in rdf:resource="#Akmola_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1.11</WPI>
+</River>
+
+<Basin rdf:about="#Ishim_Basin">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Basin>
+
+<Lake rdf:about="#Issyk">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Lake rdf:about="#Itemgen">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Lake rdf:about="#Jasybay">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Lake rdf:about="#Kak">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Lake rdf:about="#Kalibek">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Lake rdf:about="#Kalmakkol">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<River rdf:about="#Kalzhir">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</River>
+
+<Lake rdf:about="#Kamyslybas">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Lake rdf:about="#Kamystybas">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Lake rdf:about="#Kapchagay">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<rdf:Description rdf:about="#Kapshagai">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#Almaty_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1.68</WPI>
+</rdf:Description>
+
+<Lake rdf:about="#Kapshagai_reservoir">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.68</WPI>
+</Lake>
+
+<rdf:Description rdf:about="#Kara-Kengir">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#Karagandy_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">6.28</WPI>
+</rdf:Description>
+
+<Lake rdf:about="#Karacoin">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<City_KZ rdf:about="#Karagandy">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</City_KZ>
+
+<Regions_KZ rdf:about="#Karagandy_Region">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Contains rdf:resource="#Kara-Kengir"/>
+  <Contains rdf:resource="#Kengir"/>
+  <Contains rdf:resource="#Nura"/>
+  <Contains rdf:resource="#Samarkand"/>
+  <Contains rdf:resource="#Sherubay-Nura"/>
+  <Circ_Sys_Diseases rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">2707.5</Circ_Sys_Diseases>
+</Regions_KZ>
+
+<River rdf:about="#Karakaba">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</River>
+
+<Lake rdf:about="#Karasor">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<River rdf:about="#Karatal">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</River>
+
+<rdf:Description rdf:about="#Karkara">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#Almaty_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">2.2</WPI>
+</rdf:Description>
+
+<rdf:Description rdf:about="#Katta-Bugun">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#South_Kazakhstan_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.28</WPI>
+</rdf:Description>
+
+<Lake rdf:about="#Kayindi">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Regions_KZ rdf:about="#Kazakhstan">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Circ_Sys_Diseases rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">3024.4</Circ_Sys_Diseases>
+</Regions_KZ>
+
+<River rdf:about="#Keles">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#South_Kazakhstan_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1.94</WPI>
+</River>
+
+<rdf:Description rdf:about="#Kengir">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#Karagandy_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">4.85</WPI>
+</rdf:Description>
+
+<River rdf:about="#Khorgos">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#Almaty_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">3.08</WPI>
+</River>
+
+<Lake rdf:about="#Kishi_Karasor">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Lake rdf:about="#Kishi_Sarykopa">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Lake rdf:about="#Kishi_karai">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Lake rdf:about="#Koibagar">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<City_KZ rdf:about="#Kokshetau">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</City_KZ>
+
+<Regions_KZ rdf:about="#Kokshetau_Region">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Regions_KZ>
+
+<Lake rdf:about="#Kopa">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<City_KZ rdf:about="#Kostanay">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</City_KZ>
+
+<Regions_KZ rdf:about="#Kostanay_Region">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Contains rdf:resource="#Ak-Bulak"/>
+  <Contains rdf:resource="#Sary-Bulak"/>
+  <Contains rdf:resource="#Tobol"/>
+  <Circ_Sys_Diseases rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">2597.4</Circ_Sys_Diseases>
+</Regions_KZ>
+
+<rdf:Description rdf:about="#Krasnoyarka">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#East_Kazakhstan_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">4.44</WPI>
+</rdf:Description>
+
+<River rdf:about="#Kurchum">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</River>
+
+<Lake rdf:about="#Kurgaldzhin">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<River rdf:about="#Kurty">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</River>
+
+<Lake rdf:about="#Kusmuryn">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Lake rdf:about="#Kyzylkak">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<City_KZ rdf:about="#Kyzylorda">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</City_KZ>
+
+<Regions_KZ rdf:about="#Kyzylorda_Region">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Contains rdf:resource="#Syrdarya"/>
+  <Circ_Sys_Diseases rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">3010.9</Circ_Sys_Diseases>
+</Regions_KZ>
+
+<River rdf:about="#Lepsy">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</River>
+
+<rdf:Description rdf:about="#Malaya_Almatinka">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#Almaty_City"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1.25</WPI>
+</rdf:Description>
+
+<Regions_KZ rdf:about="#Mangystau_Region">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Circ_Sys_Diseases rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">2377.7</Circ_Sys_Diseases>
+</Regions_KZ>
+
+<Lake rdf:about="#Maraldy">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Lake rdf:about="#Markakol">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Lake rdf:about="#Markol">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Regions_KZ rdf:about="#North_Kazakhstan_Region">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Contains rdf:resource="#Ishim"/>
+</Regions_KZ>
+
+<River rdf:about="#Nura">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#Akmola_Region"/>
+  <Located_in rdf:resource="#Karagandy_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1.17</WPI>
+</River>
+
+<Basin rdf:about="#Nura_Sarysu_Basin">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Basin>
+
+<Chemical_substance_in_water rdf:about="#Oil_products">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Chemical_substance_in_water>
+
+<River rdf:about="#Oiyl">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</River>
+
+<City_KZ rdf:about="#Oskemen">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</City_KZ>
+
+<City_KZ rdf:about="#Pavlodar">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</City_KZ>
+
+<Regions_KZ rdf:about="#Pavlodar_Region">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Contains rdf:resource="#Irtysh"/>
+  <Circ_Sys_Diseases rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">3195.5</Circ_Sys_Diseases>
+</Regions_KZ>
+
+<City_KZ rdf:about="#Petropavl">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</City_KZ>
+
+<River rdf:about="#Sagiz">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</River>
+
+<rdf:Description rdf:about="#Samarkand">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#Karagandy_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1.51</WPI>
+</rdf:Description>
+
+<rdf:Description rdf:about="#Sary-Bulak">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#Kostanay_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1.22</WPI>
+</rdf:Description>
+
+<Lake rdf:about="#Sarykopa">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<River rdf:about="#Sarysu">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</River>
+
+<Lake rdf:about="#Sasykkol">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Lake rdf:about="#Seltyteniz">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<City_KZ rdf:about="#Semey">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</City_KZ>
+
+<Lake rdf:about="#Shagluteniz">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Lake rdf:about="#Shalkar">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<rdf:Description rdf:about="#Shardara">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#South_Kazakhstan_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">2.09</WPI>
+</rdf:Description>
+
+<River rdf:about="#Sharyn">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#Almaty_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.75</WPI>
+</River>
+
+<River rdf:about="#Shelek">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</River>
+
+<rdf:Description rdf:about="#Sherubay-Nura">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#Karagandy_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">3.16</WPI>
+</rdf:Description>
+
+<River rdf:about="#Shiderty">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</River>
+
+<rdf:Description rdf:about="#Shilik">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#Almaty_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1.68</WPI>
+</rdf:Description>
+
+<River rdf:about="#Shu">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#Zhambyl_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">2.84</WPI>
+</River>
+
+<Basin rdf:about="#Shu_Talas_Basin">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Basin>
+
+<River rdf:about="#Shuchie">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#Akmola_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.44</WPI>
+</River>
+
+<Lake rdf:about="#Shureksor">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<City_KZ rdf:about="#Shymkent">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Circ_Sys_Diseases rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">3528.3</Circ_Sys_Diseases>
+</City_KZ>
+
+<Lake rdf:about="#Sluts">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Lake rdf:about="#Small_Aral_Sea">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<River rdf:about="#Small_Ozen">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</River>
+
+<Regions_KZ rdf:about="#South_Kazakhstan_Region">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Contains rdf:resource="#Badam"/>
+  <Contains rdf:resource="#Bugun"/>
+  <Contains rdf:resource="#Katta-Bugun"/>
+  <Contains rdf:resource="#Keles"/>
+  <Contains rdf:resource="#Shardara"/>
+  <Contains rdf:resource="#Syrdarya"/>
+  <Circ_Sys_Diseases rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">2649.7</Circ_Sys_Diseases>
+</Regions_KZ>
+
+<River rdf:about="#Syrdarya">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#South_Kazakhstan_Region"/>
+  <Located_in rdf:resource="#Kyzylorda_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1.3</WPI>
+</River>
+
+<River rdf:about="#Talas">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#Zhambyl_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.92</WPI>
+</River>
+
+<River rdf:about="#Talgar">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</River>
+
+<City_KZ rdf:about="#Taraz">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</City_KZ>
+
+<Lake rdf:about="#Teke">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#Almaty_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">2.06</WPI>
+</Lake>
+
+<Lake rdf:about="#Tengiz">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<River rdf:about="#Tentek">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</River>
+
+<rdf:Description rdf:about="#Tikhaya">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#East_Kazakhstan_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">5.74</WPI>
+</rdf:Description>
+
+<River rdf:about="#Tobol">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#Kostanay_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.63</WPI>
+</River>
+
+<Basin rdf:about="#Tobol_Turgai_Basin">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Basin>
+
+<Lake rdf:about="#Tontiger">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Lake rdf:about="#Toraigyr">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<River rdf:about="#Turgai">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</River>
+
+<rdf:Description rdf:about="#Turgen">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#Almaty_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1.57</WPI>
+</rdf:Description>
+
+<City_KZ rdf:about="#Turkestan">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</City_KZ>
+
+<Regions_KZ rdf:about="#Turkestan_Region">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Circ_Sys_Diseases rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">2986.6</Circ_Sys_Diseases>
+</Regions_KZ>
+
+<Lake rdf:about="#Tuzkol">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<River rdf:about="#Uba">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#East_Kazakhstan_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">3.45</WPI>
+</River>
+
+<River rdf:about="#Ulba">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#East_Kazakhstan_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">4.76</WPI>
+</River>
+
+<Lake rdf:about="#Ulken_Kara">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Lake rdf:about="#Ulyales">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<River rdf:about="#Ural">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#West_Kazakhstan_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.87</WPI>
+</River>
+
+<Basin rdf:about="#Ural_Caspian_Basin">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Basin>
+
+<City_KZ rdf:about="#Ural_city">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</City_KZ>
+
+<River rdf:about="#Usek">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</River>
+
+<Lake rdf:about="#Uyaly">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<River rdf:about="#Vyacheslavskoe">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Located_in rdf:resource="#Akmola_Region"/>
+  <WPI rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.67</WPI>
+</River>
+
+<Regions_KZ rdf:about="#West_Kazakhstan_Region">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Contains rdf:resource="#Chagan"/>
+  <Contains rdf:resource="#Derkul"/>
+  <Contains rdf:resource="#Ural"/>
+  <Circ_Sys_Diseases rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">2323.8</Circ_Sys_Diseases>
+</Regions_KZ>
+
+<Lake rdf:about="#Zaysan">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Lake rdf:about="#Zerenda">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Lake rdf:about="#Zhaksykylysh">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Lake rdf:about="#Zhalauly">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Lake rdf:about="#Zhaltyr">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Regions_KZ rdf:about="#Zhambyl_Region">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+  <Contains rdf:resource="#Assa"/>
+  <Contains rdf:resource="#Shu"/>
+  <Contains rdf:resource="#Talas"/>
+  <Circ_Sys_Diseases rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">3623.2</Circ_Sys_Diseases>
+</Regions_KZ>
+
+<Lake rdf:about="#Zharman">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Lake rdf:about="#Zhasylkol">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Lake>
+
+<Regions_KZ rdf:about="#Zhezkazgan_Region">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#NamedIndividual"/>
+</Regions_KZ>
+
+
+</rdf:RDF>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PyTableMiner Web Page</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+
+        #title {
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
+
+        #input-form {
+            width: 80%;
+            min-height: 33.33vh; /* At least one-third of the screen height */
+            padding: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Center contents vertically */
+            justify-content: space-between; /* Distribute space evenly between child elements */
+        }
+
+        textarea {
+            width: 90%;
+            max-width: 90vw; /* 90% of the viewport width */
+            height: 33.33vh; /* One-third of the screen height */
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            resize: vertical; /* Allow vertical resizing */
+            overflow: auto; /* Add scrollbars when content overflows */
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #result-view {
+            width: 80%;
+            height: 33.33vh; /* One-third of the screen height */
+            margin-top: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            overflow: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+        }
+    </style>
+    <script>
+        window.onload = function () {
+            const textarea = document.getElementById('input_text');
+            const form = document.getElementById('input-form');
+
+            // Load saved text from local storage on page load
+            const savedText = localStorage.getItem('savedText');
+            if (savedText) {
+                textarea.value = savedText;
+            }
+
+            // Save text to local storage when form is submitted
+            form.addEventListener('submit', function () {
+                localStorage.setItem('savedText', textarea.value);
+            });
+        };
+    </script>
+</head>
+<body>
+    <div id="title">PyTableMiner Web Page</div>
+    <form id="input-form" method="POST">
+        <label for="input_text">Enter SPARQL request:</label>
+        <textarea id="input_text" name="input_text" rows="4"></textarea>
+        <button type="submit">Submit</button>
+    </form>
+    <div id="result-view">
+        <table>
+            <tr>
+                {% for header in headers %}
+                    <th>{{ header }}</th>
+                {% endfor %}
+            </tr>
+            {% for row in data %}
+                <tr>
+                    {% for cell in row %}
+                        <td>{{ cell }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+</body>
+</html>
