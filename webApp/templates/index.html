@@ -10,7 +10,6 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
             font-family: Arial, sans-serif;
         }
 
@@ -76,6 +75,7 @@
             padding: 8px;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Include Chart.js library -->
     <script>
         window.onload = function () {
             const textarea = document.getElementById('input_text');
@@ -117,5 +117,82 @@
             {% endfor %}
         </table>
     </div>
+
+    <!-- Embed data in a data-* attribute of an element -->
+    <div id="data-container" data-csvdata="{{ data | safe }}"></div>
+    <div id="header-container" header-csvdata="{{ headers | safe }}"></div>
+
+    <div>
+        <canvas id="barChart"></canvas> <!-- Create a canvas element for the bar chart -->
+    </div>
+
+    <script>
+        var dataContainer = document.getElementById('data-container');
+        var jsonStr = dataContainer.getAttribute('data-csvdata');
+        jsonStr = jsonStr.replace(/'/g, '"');
+        var dataFromFlask = JSON.parse(jsonStr);
+
+        var headerContainer = document.getElementById('header-container');
+        var jsonStr = headerContainer.getAttribute('header-csvdata');
+        jsonStr = jsonStr.replace(/'/g, '"');
+        var headerFromFlask = JSON.parse(jsonStr);
+
+
+        // Use dataFromFlask in your Chart.js code
+        var headerData = dataFromFlask.map(row => row[0]);
+        var numericData = []; // An array of arrays to store numeric data for each column
+
+        // Iterate over each column (excluding the first one which is the header)
+        for (var columnIndex = 1; columnIndex < headerFromFlask.length; columnIndex++) {
+            var columnNumericData = dataFromFlask.map(row => parseFloat(row[columnIndex]));
+            
+            var allValuesAreNaN = columnNumericData.every(value => isNaN(value));
+            if (allValuesAreNaN) {
+                console.log("All values are NaN");
+            } else {
+                // At least one value is not NaN
+                console.log(columnNumericData);
+                numericData.push(columnNumericData);
+            }
+
+        }
+
+        // Get the canvas element for the bar chart
+        var flexContainer = document.createElement('div');
+        flexContainer.style.display = 'flex';
+        flexContainer.style.flexDirection = 'column';
+        flexContainer.style.height = String((headerFromFlask.length - 1) * 300) + 'px';
+        document.body.appendChild(flexContainer);
+        
+        for (var i = 0; i < numericData.length; i++) {
+            var canvas = document.createElement('canvas');
+            canvas.style.height = '300px'; // Set canvas height to 400 pixels
+            canvas.style.width = '100vw'; // Full width of the screen
+            flexContainer.appendChild(canvas); 
+
+            new Chart(canvas, {
+                type: 'line', // Change to the chart type you want
+                data: {
+                    labels: dataFromFlask.map(row => row[0]),
+                    datasets: [{
+                        label: headerData, // Add the column header as the label
+                        data: numericData[i],
+                        borderColor: 'rgba(0, 123, 255, 0.5)',
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: false,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+    </script>
 </body>
 </html>

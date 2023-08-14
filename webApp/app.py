@@ -44,12 +44,13 @@ def home():
                 data = read_csv_data(filepath)
             except Exception as e:
                 data = [[f'Exception was occured while processing request: {e})']]
+            headers = [f'{i}' for i in range(len(data[0]))]
         else:
             data = []
-        return render_template('index.html', data=data)
+            headers = []
+        return render_template('index.html', data=data, headers=headers)
     else:
-        data = []
-        return render_template('index.html', data=data)
+        return render_template('index.html', data=[], headers=[])
 
 if __name__ == '__main__':
     app.run(debug=True)
