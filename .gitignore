@@ -3,3 +3,6 @@
 *.csv
 .idea/
 __pycache__*
+!tables/**
+*.rar
+*.DS_Store
