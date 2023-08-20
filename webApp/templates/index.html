@@ -65,6 +65,26 @@
             overflow: auto;
         }
 
+        .header-dropdown {
+            padding: 5px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: white;
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.3s, background-color 0.3s;
+        }
+
+        .header-dropdown:hover {
+            border-color: #007bff;
+        }
+
+        .header-dropdown:focus {
+            border-color: #007bff;
+            background-color: #f0f0f0;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -103,13 +123,19 @@
     </form>
     <div id="result-view">
         <table>
-            <tr>
+            <tr id="header-dropdowns">
                 {% for header in headers %}
-                    <th>{{ header }}</th>
+                    <th>
+                        <select class="header-dropdown">
+                            {% for value in header %}
+                                <option value="{{ value }}">{{ value }}</option>
+                            {% endfor %}
+                        </select>
+                    </th>
                 {% endfor %}
             </tr>
             {% for row in data %}
-                <tr>
+                <tr class="data-row">
                     {% for cell in row %}
                         <td>{{ cell }}</td>
                     {% endfor %}
@@ -127,6 +153,49 @@
     </div>
 
     <script>
+        // Get all header dropdowns
+        var headerDropdowns = document.querySelectorAll('.header-dropdown');
+
+        // Initialize an array to store selected values for each dropdown
+        var selectedValues = new Array(headerDropdowns.length).fill('');
+
+        // Add event listeners to each header dropdown
+        headerDropdowns.forEach(function (dropdown, columnIndex) {
+            dropdown.addEventListener('change', function () {
+                selectedValues[columnIndex] = dropdown.value;
+                applyFilters();
+            });
+        });
+
+        // Function to apply filters and show/hide rows based on selected values
+        function applyFilters() {
+            var dataRows = document.querySelectorAll('.data-row');
+
+            // Loop through data rows
+            dataRows.forEach(function (row) {
+                var cells = row.querySelectorAll('td');
+                var shouldShowRow = true;
+
+                // Check if the row matches the selected values
+                selectedValues.forEach(function (value, columnIndex) {
+                    var cellValue = cells[columnIndex].textContent.trim();
+                    
+                    // Skip filtering if "All" is selected for a column
+                    if (value !== 'All' && value !== '' && cellValue !== value) {
+                        shouldShowRow = false;
+                    }
+                });
+
+                // Show/hide rows based on filter criteria
+                if (shouldShowRow) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+
         var dataContainer = document.getElementById('data-container');
         var jsonStr = dataContainer.getAttribute('data-csvdata');
         jsonStr = jsonStr.replace(/'/g, '"');

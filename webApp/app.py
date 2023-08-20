@@ -44,7 +44,13 @@ def home():
                 data = read_csv_data(filepath)
             except Exception as e:
                 data = [[f'Exception was occured while processing request: {e})']]
-            headers = [f'{i}' for i in range(len(data[0]))]
+            headers = []
+            for i in range(len(data[0])):
+                columnt_set = set()
+                for k in range(len(data)):
+                    columnt_set.add(data[k][i])
+                headers.append(['All'] + sorted(list(columnt_set)))
+            
         else:
             data = []
             headers = []
