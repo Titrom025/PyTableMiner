@@ -56,11 +56,12 @@
 
         #result-view {
             width: 80%;
-            height: 33.33vh; /* One-third of the screen height */
+            height: 50vh;
             margin-top: 20px;
             background-color: #f0f0f0;
             border-radius: 10px;
             padding: 20px;
+            margin-bottom: 50px;
             box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
             overflow: auto;
         }
@@ -96,6 +97,7 @@
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Include Chart.js library -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.0.2"></script>
     <script>
         window.onload = function () {
             const textarea = document.getElementById('input_text');
@@ -148,11 +150,11 @@
     <div id="data-container" data-csvdata="{{ data | safe }}"></div>
     <div id="header-container" header-csvdata="{{ headers | safe }}"></div>
 
-    <div>
-        <canvas id="barChart"></canvas> <!-- Create a canvas element for the bar chart -->
-    </div>
-
     <script>
+        function createArrayWithValues(targetLength, value) {
+            return Array.from({ length: targetLength }, () => value);
+        }
+
         // Get all header dropdowns
         var headerDropdowns = document.querySelectorAll('.header-dropdown');
 
@@ -210,6 +212,7 @@
         // Use dataFromFlask in your Chart.js code
         var headerData = dataFromFlask.map(row => row[0]);
         var numericData = []; // An array of arrays to store numeric data for each column
+        var numericDataIndices = []
 
         // Iterate over each column (excluding the first one which is the header)
         for (var columnIndex = 1; columnIndex < headerFromFlask.length; columnIndex++) {
@@ -222,37 +225,62 @@
                 // At least one value is not NaN
                 console.log(columnNumericData);
                 numericData.push(columnNumericData);
+                numericDataIndices.push(columnIndex + 1);
             }
 
         }
+
+        var maxValues = numericData.map(data => Math.max(...data));
+        var minValues = numericData.map(data => Math.min(...data));
 
         // Get the canvas element for the bar chart
         var flexContainer = document.createElement('div');
         flexContainer.style.display = 'flex';
         flexContainer.style.flexDirection = 'column';
-        flexContainer.style.height = String((headerFromFlask.length - 1) * 300) + 'px';
+        flexContainer.style.height = String((headerFromFlask.length - 1) * 500) + 'px';
         document.body.appendChild(flexContainer);
         
         for (var i = 0; i < numericData.length; i++) {
             var canvas = document.createElement('canvas');
-            canvas.style.height = '300px'; // Set canvas height to 400 pixels
+            canvas.style.height = '500px'; // Set canvas height to 400 pixels
             canvas.style.width = '100vw'; // Full width of the screen
-            flexContainer.appendChild(canvas); 
+            flexContainer.appendChild(canvas);
 
             new Chart(canvas, {
                 type: 'line', // Change to the chart type you want
                 data: {
                     labels: dataFromFlask.map(row => row[0]),
-                    datasets: [{
-                        label: headerData, // Add the column header as the label
+                    datasets: [
+                    {
+                        label: "Column " + String(numericDataIndices[i]),
                         data: numericData[i],
                         borderColor: 'rgba(0, 123, 255, 0.5)',
+                        fill: false
+                    },
+                    {
+                        label: "Min",
+                        data: createArrayWithValues(numericData[i].length, minValues[i]),
+                        borderColor: 'rgba(255, 123, 120, 0.5)',
+                        fill: false
+                    },
+                    {
+                        label: "Max",
+                        data: createArrayWithValues(numericData[i].length, maxValues[i]),
+                        borderColor: 'rgba(125, 255, 120, 0.5)',
                         fill: false
                     }]
                 },
                 options: {
                     responsive: false,
                     maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            left: 100,
+                            right: 100,
+                            top: 10,
+                            bottom: 10
+                        }
+                    },
                     scales: {
                         y: {
                             beginAtZero: true
