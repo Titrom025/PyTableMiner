@@ -145,36 +145,114 @@
             {% endfor %}
         </table>
     </div>
+    <div id="charts"></div>
 
     <!-- Embed data in a data-* attribute of an element -->
     <div id="data-container" data-csvdata="{{ data | safe }}"></div>
     <div id="header-container" header-csvdata="{{ headers | safe }}"></div>
 
     <script>
+        function createArrayFromZeroToN(N) {
+            const result = [];
+            for (let i = 0; i < N; i++) {
+                result.push(i);
+            }
+            return result;
+        }
+
         function createArrayWithValues(targetLength, value) {
             return Array.from({ length: targetLength }, () => value);
         }
 
-        // Get all header dropdowns
-        var headerDropdowns = document.querySelectorAll('.header-dropdown');
+        function drawCharts() {
+            // Use dataFromFlask in your Chart.js code
+            var headerData = shownRowIndices.map(rowIndex => dataFromFlask[rowIndex][0]);
+            var numericData = []; // An array of arrays to store numeric data for each column
+            var numericDataIndices = []
 
-        // Initialize an array to store selected values for each dropdown
-        var selectedValues = new Array(headerDropdowns.length).fill('');
+            // Iterate over each column (excluding the first one which is the header)
+            for (var columnIndex = 1; columnIndex < headerFromFlask.length; columnIndex++) {
+                var columnNumericData = dataFromFlask.map(row => parseFloat(row[columnIndex]));
 
-        // Add event listeners to each header dropdown
-        headerDropdowns.forEach(function (dropdown, columnIndex) {
-            dropdown.addEventListener('change', function () {
-                selectedValues[columnIndex] = dropdown.value;
-                applyFilters();
-            });
-        });
+                
+                var allValuesAreNaN = columnNumericData.every(value => isNaN(value));
+                const filteredColumnNumericData = shownRowIndices.map(rowIndex => columnNumericData[rowIndex]);
+                if (!allValuesAreNaN) {
+                    numericData.push(filteredColumnNumericData);
+                    numericDataIndices.push(columnIndex + 1);
+                }
+
+            }
+
+            var maxValues = numericData.map(data => Math.max(...data));
+            var minValues = numericData.map(data => Math.min(...data));
+
+            // Get the canvas element for the bar chart
+            const flexContainer = document.getElementById('charts');
+            flexContainer.innerHTML = '';
+            flexContainer.style.display = 'flex';
+            flexContainer.style.flexDirection = 'column';
+            flexContainer.style.height = String((headerFromFlask.length - 1) * 500) + 'px';
+            document.body.appendChild(flexContainer);
+            
+            for (var i = 0; i < numericData.length; i++) {
+                var canvas = document.createElement('canvas');
+                canvas.style.height = '500px'; // Set canvas height to 400 pixels
+                canvas.style.width = '100vw'; // Full width of the screen
+                flexContainer.appendChild(canvas);
+
+                new Chart(canvas, {
+                    type: 'line', // Change to the chart type you want
+                    data: {
+                        labels: headerData,
+                        datasets: [
+                        {
+                            label: "Column " + String(numericDataIndices[i]),
+                            data: numericData[i],
+                            borderColor: 'rgba(0, 123, 255, 0.5)',
+                            fill: true
+                        },
+                        {
+                            label: "Min",
+                            data: createArrayWithValues(numericData[i].length, minValues[i]),
+                            borderColor: 'rgba(255, 123, 120, 0.5)',
+                            fill: false
+                        },
+                        {
+                            label: "Max",
+                            data: createArrayWithValues(numericData[i].length, maxValues[i]),
+                            borderColor: 'rgba(125, 255, 120, 0.5)',
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        responsive: false,
+                        maintainAspectRatio: false,
+                        layout: {
+                            padding: {
+                                left: 100,
+                                right: 100,
+                                top: 10,
+                                bottom: 10
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+        }
 
         // Function to apply filters and show/hide rows based on selected values
         function applyFilters() {
             var dataRows = document.querySelectorAll('.data-row');
 
+            shownRowIndices = [];
             // Loop through data rows
-            dataRows.forEach(function (row) {
+            dataRows.forEach(function (row, rowIndex) {
                 var cells = row.querySelectorAll('td');
                 var shouldShowRow = true;
 
@@ -191,12 +269,13 @@
                 // Show/hide rows based on filter criteria
                 if (shouldShowRow) {
                     row.style.display = '';
+                    shownRowIndices.push(rowIndex);
                 } else {
                     row.style.display = 'none';
                 }
+                
             });
         }
-
 
         var dataContainer = document.getElementById('data-container');
         var jsonStr = dataContainer.getAttribute('data-csvdata');
@@ -208,88 +287,23 @@
         jsonStr = jsonStr.replace(/'/g, '"');
         var headerFromFlask = JSON.parse(jsonStr);
 
+        var shownRowIndices = createArrayFromZeroToN(dataFromFlask.length);
+        // Get all header dropdowns
+        var headerDropdowns = document.querySelectorAll('.header-dropdown');
 
-        // Use dataFromFlask in your Chart.js code
-        var headerData = dataFromFlask.map(row => row[0]);
-        var numericData = []; // An array of arrays to store numeric data for each column
-        var numericDataIndices = []
+        // Initialize an array to store selected values for each dropdown
+        var selectedValues = new Array(headerDropdowns.length).fill('');
 
-        // Iterate over each column (excluding the first one which is the header)
-        for (var columnIndex = 1; columnIndex < headerFromFlask.length; columnIndex++) {
-            var columnNumericData = dataFromFlask.map(row => parseFloat(row[columnIndex]));
-            
-            var allValuesAreNaN = columnNumericData.every(value => isNaN(value));
-            if (allValuesAreNaN) {
-                console.log("All values are NaN");
-            } else {
-                // At least one value is not NaN
-                console.log(columnNumericData);
-                numericData.push(columnNumericData);
-                numericDataIndices.push(columnIndex + 1);
-            }
-
-        }
-
-        var maxValues = numericData.map(data => Math.max(...data));
-        var minValues = numericData.map(data => Math.min(...data));
-
-        // Get the canvas element for the bar chart
-        var flexContainer = document.createElement('div');
-        flexContainer.style.display = 'flex';
-        flexContainer.style.flexDirection = 'column';
-        flexContainer.style.height = String((headerFromFlask.length - 1) * 500) + 'px';
-        document.body.appendChild(flexContainer);
-        
-        for (var i = 0; i < numericData.length; i++) {
-            var canvas = document.createElement('canvas');
-            canvas.style.height = '500px'; // Set canvas height to 400 pixels
-            canvas.style.width = '100vw'; // Full width of the screen
-            flexContainer.appendChild(canvas);
-
-            new Chart(canvas, {
-                type: 'line', // Change to the chart type you want
-                data: {
-                    labels: dataFromFlask.map(row => row[0]),
-                    datasets: [
-                    {
-                        label: "Column " + String(numericDataIndices[i]),
-                        data: numericData[i],
-                        borderColor: 'rgba(0, 123, 255, 0.5)',
-                        fill: false
-                    },
-                    {
-                        label: "Min",
-                        data: createArrayWithValues(numericData[i].length, minValues[i]),
-                        borderColor: 'rgba(255, 123, 120, 0.5)',
-                        fill: false
-                    },
-                    {
-                        label: "Max",
-                        data: createArrayWithValues(numericData[i].length, maxValues[i]),
-                        borderColor: 'rgba(125, 255, 120, 0.5)',
-                        fill: false
-                    }]
-                },
-                options: {
-                    responsive: false,
-                    maintainAspectRatio: false,
-                    layout: {
-                        padding: {
-                            left: 100,
-                            right: 100,
-                            top: 10,
-                            bottom: 10
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
+        // Add event listeners to each header dropdown
+        headerDropdowns.forEach(function (dropdown, columnIndex) {
+            dropdown.addEventListener('change', function () {
+                selectedValues[columnIndex] = dropdown.value;
+                applyFilters();
+                drawCharts();
             });
-        }
+        });
 
+        drawCharts();
     </script>
 </body>
 </html>
